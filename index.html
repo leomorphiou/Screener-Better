@@ -150,6 +150,10 @@ a.blink{color:var(--blue);font-size:10px;text-decoration:none}
         <div class="pbar-txt" id="ptxt"></div>
       </div>
     </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <input type="text" id="csearch" placeholder="Search coin e.g. BTC, ETH, DOGE" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-size:12px;font-family:inherit" onkeydown="if(event.key==='Enter')searchCoin()">
+      <button class="btn-scan" onclick="searchCoin()" style="padding:6px 12px">🔍</button>
+    </div>
   </div>
   <div id="reswrap">
     <div class="empty"><div class="empty-icon">🕐</div><div>Run scan at 6:30 PM PKT</div><div style="margin-top:4px;font-size:10px">Enter before 8 PM · Exit before 10 PM</div></div>
@@ -628,19 +632,39 @@ async function loadOB(pair){
 }
 
 async function loadNews(sym){
-  try{
-    const r=await fetch(`https://cryptopanic.com/api/v1/posts/?auth_token=public&currencies=${sym}&kind=news&filter=hot`);
-    const d=await r.json();
-    if(d.results?.length){
-      const items=d.results.slice(0,5);
-      $('newswrap').innerHTML=items.map(n=>{
-        const vote=n.votes,bull=vote.positive>vote.negative?'bull':vote.negative>vote.positive?'bear':'neu';
-        const ago=Math.round((Date.now()-new Date(n.published_at))/60000);
-        const agoS=ago<60?`${ago}m ago`:ago<1440?`${Math.round(ago/60)}h ago`:`${Math.round(ago/1440)}d ago`;
-        return `<div class="news-item news-${bull}"><div class="news-title">${n.title}</div><div class="news-meta">${n.source.title} · ${agoS} · 👍${vote.positive} 👎${vote.negative}</div></div>`;
-      }).join('');
-    } else $('newswrap').innerHTML='<div style="color:var(--text3);font-size:10px">No recent news found</div>';
-  }catch(_){$('newswrap').innerHTML='<div style="color:var(--text3);font-size:10px">News unavailable</div>';}
+  const sources=[
+    `https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/&count=50`,
+    `https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss&count=50`,
+    `https://api.rss2json.com/v1/api.json?rss_url=https://decrypt.co/feed&count=50`
+  ];
+  const symLower=sym.toLowerCase();
+  const symUpper=sym.toUpperCase();
+  let found=[];
+  for(const url of sources){
+    try{
+      const r=await fetch(url);
+      const d=await r.json();
+      if(d.items?.length){
+        const matches=d.items.filter(item=>{
+          const text=(item.title+' '+(item.description||'')).toLowerCase();
+          return text.includes(symLower)||text.includes(symUpper.toLowerCase());
+        }).slice(0,3);
+        found=[...found,...matches];
+        if(found.length>=4) break;
+      }
+    }catch(_){}
+  }
+  if(found.length){
+    $('newswrap').innerHTML=found.slice(0,5).map(n=>{
+      const ago=Math.round((Date.now()-new Date(n.pubDate))/60000);
+      const agoS=ago<60?`${ago}m ago`:ago<1440?`${Math.round(ago/60)}h ago`:`${Math.round(ago/1440)}d ago`;
+      const title=n.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const src=n.link?.includes('coindesk')?'CoinDesk':n.link?.includes('cointelegraph')?'CoinTelegraph':n.link?.includes('decrypt')?'Decrypt':'News';
+      return `<div class="news-item news-neu"><div class="news-title"><a href="${n.link}" target="_blank" style="color:var(--text);text-decoration:none">${title}</a></div><div class="news-meta">${src} · ${agoS}</div></div>`;
+    }).join('');
+  } else {
+    $('newswrap').innerHTML=`<div style="color:var(--text3);font-size:10px">No recent news for ${symUpper} — try checking CoinDesk manually</div>`;
+  }
 }
 
 async function loadFutures(pair){
@@ -793,6 +817,32 @@ OB SIGNAL: [confirms/contradicts/neutral]`;
     $('aiout').textContent=txt;$('aiout').style.display='block';
   }catch(e){$('aiout').textContent='Error: '+e.message;$('aiout').style.display='block';}
   $('aibtn').disabled=false;$('aibtn').textContent='🤖 GET ENTRY · TP · SL';
+}
+
+async function searchCoin(){
+  const raw=$('csearch').value.trim().toUpperCase().replace('/USDT','').replace('USDT','');
+  if(!raw)return;
+  const pair=raw+'USDT';
+  $('scanbtn').disabled=true;
+  setProg(20,`Searching ${raw}...`);
+  try{
+    const r=await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`);
+    if(!r.ok){setProg(0,`${raw} not found on Binance`);$('scanbtn').disabled=false;return;}
+    const t=await r.json();
+    const kl=await fetch(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1d&limit=31`).then(r=>r.json());
+    const hist=kl.slice(0,-1),avg=hist.reduce((s,k)=>s+parseFloat(k[5]),0)/hist.length;
+    const rv=avg>0?parseFloat(t.volume)/avg:0;
+    const coin={sym:raw,pair,price:+t.lastPrice,chg:+t.priceChangePercent,qv:+t.quoteVolume,rv,hi:+t.highPrice,lo:+t.lowPrice};
+    try{
+      const cg=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&symbols=${raw.toLowerCase()}&order=market_cap_desc&per_page=5&sparkline=false`).then(r=>r.json());
+      if(cg.length){coin.mcap=cg[0].market_cap;coin.supply=cg[0].circulating_supply;}
+    }catch(_){}
+    ST.results=[coin];
+    renderResults([coin]);
+    setProg(100,'');
+    openDetail(0);
+  }catch(e){setProg(0,`Error: ${e.message}`);}
+  $('scanbtn').disabled=false;
 }
 
 setInterval(()=>{if(ST.sel){loadOB(ST.sel.pair);}},30000);
