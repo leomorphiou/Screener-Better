@@ -632,38 +632,48 @@ async function loadOB(pair){
 }
 
 async function loadNews(sym){
-  const sources=[
-    `https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/&count=50`,
-    `https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss&count=50`,
-    `https://api.rss2json.com/v1/api.json?rss_url=https://decrypt.co/feed&count=50`
+  const symU=sym.toUpperCase();
+  const symL=sym.toLowerCase();
+  // Use allorigins proxy to bypass CORS on RSS feeds
+  const feeds=[
+    'https://www.coindesk.com/arc/outboundfeeds/rss/',
+    'https://cointelegraph.com/rss',
+    'https://decrypt.co/feed'
   ];
-  const symLower=sym.toLowerCase();
-  const symUpper=sym.toUpperCase();
+  const srcNames=['CoinDesk','CoinTelegraph','Decrypt'];
   let found=[];
-  for(const url of sources){
+  for(let i=0;i<feeds.length;i++){
     try{
-      const r=await fetch(url);
+      const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(feeds[i])}`;
+      const r=await fetch(proxy);
       const d=await r.json();
-      if(d.items?.length){
-        const matches=d.items.filter(item=>{
-          const text=(item.title+' '+(item.description||'')).toLowerCase();
-          return text.includes(symLower)||text.includes(symUpper.toLowerCase());
-        }).slice(0,3);
-        found=[...found,...matches];
-        if(found.length>=4) break;
-      }
+      const xml=d.contents||'';
+      const parser=new DOMParser();
+      const doc=parser.parseFromString(xml,'text/xml');
+      const items=[...doc.querySelectorAll('item')];
+      const matches=items.filter(item=>{
+        const title=item.querySelector('title')?.textContent||'';
+        const desc=item.querySelector('description')?.textContent||'';
+        return (title+' '+desc).toLowerCase().includes(symL);
+      }).slice(0,3).map(item=>({
+        title:item.querySelector('title')?.textContent||'',
+        link:item.querySelector('link')?.textContent||'',
+        date:item.querySelector('pubDate')?.textContent||'',
+        src:srcNames[i]
+      }));
+      found=[...found,...matches];
+      if(found.length>=4)break;
     }catch(_){}
   }
   if(found.length){
     $('newswrap').innerHTML=found.slice(0,5).map(n=>{
-      const ago=Math.round((Date.now()-new Date(n.pubDate))/60000);
-      const agoS=ago<60?`${ago}m ago`:ago<1440?`${Math.round(ago/60)}h ago`:`${Math.round(ago/1440)}d ago`;
+      const ago=n.date?Math.round((Date.now()-new Date(n.date))/60000):0;
+      const agoS=!ago?'':ago<60?`${ago}m ago`:ago<1440?`${Math.round(ago/60)}h ago`:`${Math.round(ago/1440)}d ago`;
       const title=n.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const src=n.link?.includes('coindesk')?'CoinDesk':n.link?.includes('cointelegraph')?'CoinTelegraph':n.link?.includes('decrypt')?'Decrypt':'News';
-      return `<div class="news-item news-neu"><div class="news-title"><a href="${n.link}" target="_blank" style="color:var(--text);text-decoration:none">${title}</a></div><div class="news-meta">${src} · ${agoS}</div></div>`;
+      return `<div class="news-item news-neu"><div class="news-title"><a href="${n.link}" target="_blank" style="color:var(--text);text-decoration:none">${title}</a></div><div class="news-meta">${n.src}${agoS?' · '+agoS:''}</div></div>`;
     }).join('');
   } else {
-    $('newswrap').innerHTML=`<div style="color:var(--text3);font-size:10px">No recent news for ${symUpper} — try checking CoinDesk manually</div>`;
+    $('newswrap').innerHTML=`<div style="color:var(--text3);font-size:10px">No recent ${symU} news found across CoinDesk, CoinTelegraph & Decrypt</div>`;
   }
 }
 
