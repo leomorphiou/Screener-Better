@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>⚡ Momentum Screener</title>
+<title>🐱 Catto Scanner</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -227,7 +227,37 @@ a.blink:hover{opacity:1;text-decoration:underline}
 <body>
 <div id="hdr">
   <div class="hdr1">
-    <span class="app-title">⚡ <span>MOMENTUM</span> SCREENER</span>
+    <span class="app-title"><svg width="28" height="28" viewBox="0 0 28 28" style="vertical-align:middle;margin-right:6px;border-radius:6px" xmlns="http://www.w3.org/2000/svg">
+  <!-- ginger cat face -->
+  <rect width="28" height="28" rx="7" fill="#ff8c42"/>
+  <!-- ears -->
+  <polygon points="3,8 7,2 11,9" fill="#ff8c42"/>
+  <polygon points="17,9 21,2 25,8" fill="#ff8c42"/>
+  <!-- inner ears -->
+  <polygon points="4.5,8 7,3.5 9.5,8" fill="#ffb085"/>
+  <polygon points="18.5,8 21,3.5 23.5,8" fill="#ffb085"/>
+  <!-- face -->
+  <ellipse cx="14" cy="16" rx="11" ry="10" fill="#ffaa65"/>
+  <!-- forehead stripes -->
+  <line x1="14" y1="7" x2="14" y2="11" stroke="#e06020" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="11" y1="7.5" x2="12" y2="11" stroke="#e06020" stroke-width="1" stroke-linecap="round"/>
+  <line x1="17" y1="7.5" x2="16" y2="11" stroke="#e06020" stroke-width="1" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="10" cy="14" rx="2.2" ry="2.5" fill="#1a1a1a"/>
+  <ellipse cx="18" cy="14" rx="2.2" ry="2.5" fill="#1a1a1a"/>
+  <circle cx="10.7" cy="13.3" r="0.7" fill="white"/>
+  <circle cx="18.7" cy="13.3" r="0.7" fill="white"/>
+  <!-- nose -->
+  <polygon points="14,17 13,18.5 15,18.5" fill="#ff6b8a"/>
+  <!-- mouth -->
+  <path d="M13,18.5 Q11.5,20 11,19.5" stroke="#c0503a" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <path d="M15,18.5 Q16.5,20 17,19.5" stroke="#c0503a" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <!-- whiskers -->
+  <line x1="3" y1="16.5" x2="11" y2="17.5" stroke="#c0503a" stroke-width="0.7" opacity=".6"/>
+  <line x1="3" y1="18" x2="11" y2="18" stroke="#c0503a" stroke-width="0.7" opacity=".6"/>
+  <line x1="17" y1="17.5" x2="25" y2="16.5" stroke="#c0503a" stroke-width="0.7" opacity=".6"/>
+  <line x1="17" y1="18" x2="25" y2="18" stroke="#c0503a" stroke-width="0.7" opacity=".6"/>
+</svg><span>CATTO</span> SCANNER</span>
     <div style="display:flex;gap:6px;align-items:center">
       <span id="sbadge" class="sbadge s-off">OFF-SESSION</span>
       <button class="icon-btn" onclick="openS()">⚙</button>
@@ -246,16 +276,22 @@ a.blink:hover{opacity:1;text-decoration:underline}
   <div class="fbox">
     <div class="fgrid">
       <div class="fi"><label>MIN %</label><input type="number" id="fc" value="2" step="1"></div>
+      <div class="fi"><label>MAX %</label><input type="number" id="fcmax" value="10" step="1"></div>
       <div class="fi"><label>MIN REL VOL</label><input type="number" id="frv" value="4" step="0.5"></div>
       <div class="fi"><label>MIN $</label><input type="number" id="fmin" value="0.05" step="0.01"></div>
       <div class="fi"><label>MAX $</label><input type="number" id="fmax" value="2" step="0.1"></div>
-      <div class="fi"><label>VOL $M</label><input type="number" id="fvol" value="1" step="0.5"></div>
     </div>
-    <div class="fgrid2">
+    <div class="fgrid2" style="grid-template-columns:repeat(4,1fr)">
+      <div class="fi"><label>VOL $M</label><input type="number" id="fvol" value="1" step="0.5"></div>
       <div class="fi"><label>MAX MCAP $M</label><input type="number" id="fmcap" value="500" step="50"></div>
       <div class="fi"><label>MAX SUPPLY M</label><input type="number" id="fsupply" value="500" step="50"></div>
       <div class="fi"><label>MAX FUNDING %</label><input type="number" id="ffund" value="0.1" step="0.01"></div>
     </div>
+    <div class="fgrid2" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+      <div class="fi"><label>MAX VWAP DIST %</label><input type="number" id="fvwap" value="5" step="1"></div>
+      <div class="fi" style="display:flex;align-items:flex-end;padding-bottom:2px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="fvwapcheck" checked style="width:14px;height:14px;accent-color:var(--blue)"> <span style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.8px">FILTER BY VWAP</span></label></div>
+    </div>
+
     <div class="scan-row">
       <button class="btn-scan" id="scanbtn" onclick="runScan()">▶ RUN SCAN</button>
       <div class="pbar-wrap">
@@ -697,8 +733,10 @@ async function runScan(){
   if(ST.scanning)return;
   ST.scanning=true;btcPriceRef=ST.btcNow;
   $('scanbtn').disabled=true;$('scanbtn').textContent='⏳ SCANNING…';
-  const minC=+$('fc').value,minRV=+$('frv').value,minPr=+$('fmin').value,maxPr=+$('fmax').value,minVol=+$('fvol').value*1e6;
+  const minC=+$('fc').value,maxC=+$('fcmax').value,minRV=+$('frv').value;
+  const minPr=+$('fmin').value,maxPr=+$('fmax').value,minVol=+$('fvol').value*1e6;
   const maxMcap=+$('fmcap').value*1e6,maxSupply=+$('fsupply').value*1e6,maxFund=+$('ffund').value;
+  const maxVwapDist=+$('fvwap').value/100,useVwapFilter=$('fvwapcheck').checked;
   setProg(5,'Fetching tickers…');
   try{
     const res=await fetch('https://api.binance.com/api/v3/ticker/24hr');
@@ -706,7 +744,7 @@ async function runScan(){
     const cands=all.filter(t=>{
       if(!t.symbol.endsWith('USDT')||/UP|DOWN|BEAR|BULL/.test(t.symbol))return false;
       const p=+t.lastPrice,c=+t.priceChangePercent,v=+t.quoteVolume;
-      return p>=minPr&&p<=maxPr&&c>=minC&&v>=minVol;
+      return p>=minPr&&p<=maxPr&&c>=minC&&c<=maxC&&v>=minVol;
     });
     cands.sort((a,b)=>+b.quoteVolume-+a.quoteVolume);
     const top=cands.slice(0,40);
@@ -750,7 +788,28 @@ async function runScan(){
         const oir=await fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${coin.pair}`);
         const oid=await oir.json();coin.oi=+oid.openInterest;
       }catch(_){}
-      if(mcapOk&&supplyOk&&fundOk)filtered.push(coin);
+      // VWAP check using 15m klines
+      let vwapOk=true;
+      if(useVwapFilter){
+        try{
+          const vr=await fetch(`https://api.binance.com/api/v3/klines?symbol=${coin.pair}&interval=15m&limit=50`);
+          const vkl=await vr.json();
+          if(Array.isArray(vkl)&&vkl.length){
+            const vcandles=vkl.map(k=>({high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+            let cumPV=0,cumV=0;
+            vcandles.forEach(c=>{const tp=(c.high+c.low+c.close)/3;cumPV+=tp*c.volume;cumV+=c.volume;});
+            const vwapVal=cumV>0?cumPV/cumV:0;
+            if(vwapVal>0){
+              const dist=(coin.price-vwapVal)/vwapVal;
+              coin.vwapVal=vwapVal;coin.vwapDist=dist;
+              if(dist>maxVwapDist||dist<-0.03) vwapOk=false; // too far above or below
+            }
+          }
+        }catch(_){}
+      }
+      // RV classification
+      coin.rvTag=coin.rv>=8?'hot':coin.rv>=4?'early':'';
+      if(mcapOk&&supplyOk&&fundOk&&vwapOk)filtered.push(coin);
       await sleep(100);
     }
     filtered.sort((a,b)=>b.rv-a.rv);
@@ -779,17 +838,26 @@ function renderResults(coins,sk){
   let h=`<div class="res-hdr"><span class="res-count">✦ ${sorted.length} COINS FOUND</span><div class="sort-btns">${sortBtns}</div></div><div class="coin-cards">`;
   sorted.forEach((c,i)=>{
     const idx=coins.indexOf(c);
-    const hot=c.rv>=8||c.chg>=20;
-    const bullish=c.rv>=4&&c.chg>=5;
+    const hot=c.rv>=8;
+    const early=c.rv>=4&&c.rv<8;
+    const bullish=c.rv>=4&&c.chg>=2;
+    const rvLabel=hot?'🔥 IN PLAY':early?'⚡ EARLY':'';
+    const rvColor=hot?'#ea580c':early?'#16a34a':'';
+    const rvBg=hot?'#fff7ed':early?'#f0fdf4':'';
+    const vwapStr=c.vwapDist!=null?`${c.vwapDist>=0?'+':''}${(c.vwapDist*100).toFixed(1)}% VWAP`:'';
+    const vwapColor=c.vwapDist!=null?(c.vwapDist>0.05?'#ea580c':c.vwapDist>0?'#16a34a':'#dc2626'):'';
     h+=`<div class="coin-card ${bullish?'bull':''}" onclick="openDetail(${idx})">
       <div class="cc-top">
-        <span class="cc-sym">${hot?'<span class="hot-badge">🔥</span>':''}${c.sym}<span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px">/USDT</span></span>
+        <div>
+          <span class="cc-sym">${c.sym}<span class="cc-pair">/USDT</span></span>
+          ${rvLabel?`<span style="font-size:9px;font-weight:700;background:${rvBg};color:${rvColor};padding:2px 7px;border-radius:10px;margin-left:6px">${rvLabel}</span>`:''}
+        </div>
         <span class="cc-chg up">+${c.chg.toFixed(2)}%</span>
       </div>
       <div class="cc-stats">
         <div class="cc-stat"><div class="cc-stat-label">Price</div><div class="cc-stat-val">$${fP(c.price)}</div></div>
-        <div class="cc-stat"><div class="cc-stat-label">Rel Vol</div><div class="cc-stat-val ${c.rv>=5?'hi':'ok'}">${c.rv.toFixed(1)}x</div></div>
-        <div class="cc-stat"><div class="cc-stat-label">Volume</div><div class="cc-stat-val">${fV(c.qv)}</div></div>
+        <div class="cc-stat"><div class="cc-stat-label">Rel Vol</div><div class="cc-stat-val" style="color:${rvColor||'var(--blue)'}">${c.rv.toFixed(1)}x</div></div>
+        <div class="cc-stat"><div class="cc-stat-label">VWAP Dist</div><div class="cc-stat-val" style="color:${vwapColor||'var(--text3)'}">${vwapStr||'—'}</div></div>
         <div class="cc-stat"><div class="cc-stat-label">MCap</div><div class="cc-stat-val">${c.mcap?fV(c.mcap):'—'}</div></div>
       </div>
     </div>`;
@@ -1054,6 +1122,17 @@ async function searchCoin(){
       const cg=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&symbols=${raw.toLowerCase()}&order=market_cap_desc&per_page=5&sparkline=false`).then(r=>r.json());
       if(cg.length){coin.mcap=cg[0].market_cap;coin.supply=cg[0].circulating_supply;}
     }catch(_){}
+    // VWAP for search
+    try{
+      const vr=await fetch(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=15m&limit=50`);
+      const vkl=await vr.json();
+      if(Array.isArray(vkl)&&vkl.length){
+        const vc=vkl.map(k=>({high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+        let cp=0,cv=0;vc.forEach(c=>{const tp=(c.high+c.low+c.close)/3;cp+=tp*c.volume;cv+=c.volume;});
+        const vv=cv>0?cp/cv:0;if(vv>0){coin.vwapVal=vv;coin.vwapDist=(coin.price-vv)/vv;}
+      }
+    }catch(_){}
+    coin.rvTag=coin.rv>=8?'hot':coin.rv>=4?'early':'';
     ST.results=[coin];
     renderResults([coin]);
     setProg(100,'');
