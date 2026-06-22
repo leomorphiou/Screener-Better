@@ -69,8 +69,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .fgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px}
 .fgrid2{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .fi label{display:block;font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
-.fi input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--blue);padding:7px 9px;border-radius:var(--radius-sm);font-size:12px;font-family:inherit;font-weight:600;transition:all .2s}
-.fi input:focus{outline:none;border-color:var(--blue);background:var(--blue-light);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.fi-row{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.fi-row label{margin-bottom:0;cursor:pointer;user-select:none}
+.fi-row label:hover{color:var(--blue)}
+.fcheck{width:13px;height:13px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.fi input[type="number"]{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--blue);padding:7px 9px;border-radius:var(--radius-sm);font-size:12px;font-family:inherit;font-weight:600;transition:all .2s}
+.fi input[type="number"]:focus{outline:none;border-color:var(--blue);background:var(--blue-light);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.fi input[type="number"]:disabled{opacity:.35;cursor:not-allowed;background:var(--bg3)}
 .scan-row{display:flex;gap:8px;align-items:center}
 .btn-scan{background:linear-gradient(135deg,#6366f1,#3b82f6);border:none;color:#fff;padding:9px 18px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.3px;font-family:inherit;white-space:nowrap;transition:all .2s;box-shadow:0 3px 10px rgba(99,102,241,.35)}
 .btn-scan:hover{transform:translateY(-1px);box-shadow:0 5px 15px rgba(99,102,241,.45)}
@@ -274,22 +279,17 @@ a.blink:hover{opacity:1;text-decoration:underline}
 
 <div id="main">
   <div class="fbox">
-    <div class="fgrid">
-      <div class="fi"><label>MIN %</label><input type="number" id="fc" value="2" step="1"></div>
-      <div class="fi"><label>MAX %</label><input type="number" id="fcmax" value="10" step="1"></div>
-      <div class="fi"><label>MIN REL VOL</label><input type="number" id="frv" value="4" step="0.5"></div>
-      <div class="fi"><label>MIN $</label><input type="number" id="fmin" value="0.05" step="0.01"></div>
-      <div class="fi"><label>MAX $</label><input type="number" id="fmax" value="2" step="0.1"></div>
-    </div>
-    <div class="fgrid2" style="grid-template-columns:repeat(4,1fr)">
-      <div class="fi"><label>VOL $M</label><input type="number" id="fvol" value="1" step="0.5"></div>
-      <div class="fi"><label>MAX MCAP $M</label><input type="number" id="fmcap" value="500" step="50"></div>
-      <div class="fi"><label>MAX SUPPLY M</label><input type="number" id="fsupply" value="500" step="50"></div>
-      <div class="fi"><label>MAX FUNDING %</label><input type="number" id="ffund" value="0.1" step="0.01"></div>
-    </div>
-    <div class="fgrid2" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
-      <div class="fi"><label>MAX VWAP DIST %</label><input type="number" id="fvwap" value="5" step="1"></div>
-      <div class="fi" style="display:flex;align-items:flex-end;padding-bottom:2px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="fvwapcheck" checked style="width:14px;height:14px;accent-color:var(--blue)"> <span style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.8px">FILTER BY VWAP</span></label></div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:8px">
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fc_on" checked><label for="fc">MIN CHANGE %</label></div><input type="number" id="fc" value="2" step="1"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fcmax_on" checked><label for="fcmax">MAX CHANGE %</label></div><input type="number" id="fcmax" value="10" step="1"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="frv_on" checked><label for="frv">MIN REL VOL</label></div><input type="number" id="frv" value="4" step="0.5"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fvol_on" checked><label for="fvol">MIN VOL $M</label></div><input type="number" id="fvol" value="1" step="0.5"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fmin_on" checked><label for="fmin">MIN PRICE $</label></div><input type="number" id="fmin" value="0.05" step="0.01"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fmax_on" checked><label for="fmax">MAX PRICE $</label></div><input type="number" id="fmax" value="2" step="0.1"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fmcap_on"><label for="fmcap">MAX MCAP $M</label></div><input type="number" id="fmcap" value="500" step="50" disabled style="opacity:.4"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fsupply_on"><label for="fsupply">MAX SUPPLY M</label></div><input type="number" id="fsupply" value="500" step="50" disabled style="opacity:.4"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="ffund_on"><label for="ffund">MAX FUNDING %</label></div><input type="number" id="ffund" value="0.1" step="0.01" disabled style="opacity:.4"></div>
+      <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fvwapcheck" checked><label for="fvwap">MAX VWAP DIST %</label></div><input type="number" id="fvwap" value="5" step="1"></div>
     </div>
 
     <div class="scan-row">
@@ -382,6 +382,22 @@ const fM=v=>v>=1e9?`${(v/1e9).toFixed(1)}B`:v>=1e6?`${(v/1e6).toFixed(1)}M`:`${(
 
 let ST={results:[],sel:null,charts:{},tf:'5m',ob:null,btcBook:null,scanning:false,btcPriceAtOpen:null,btcNow:null,funding:null,oi:null,mcap:null,supply:null,news:[]};
 let apiKey=localStorage.getItem('akey')||'';
+
+// Toggle filter inputs based on checkbox
+document.addEventListener('change', e => {
+  if(!e.target.classList.contains('fcheck')) return;
+  const id = e.target.id.replace('_on','');
+  const inp = document.getElementById(id);
+  if(!inp) return;
+  inp.disabled = !e.target.checked;
+  inp.style.opacity = e.target.checked ? '1' : '0.35';
+});
+
+function getF(id) {
+  const cb = document.getElementById(id+'_on');
+  if(cb && !cb.checked) return null;
+  return +document.getElementById(id).value;
+}
 
 function openS(){$('akey').value=apiKey;$('smodal').classList.add('show');}
 function closeS(){$('smodal').classList.remove('show');}
@@ -733,10 +749,13 @@ async function runScan(){
   if(ST.scanning)return;
   ST.scanning=true;btcPriceRef=ST.btcNow;
   $('scanbtn').disabled=true;$('scanbtn').textContent='⏳ SCANNING…';
-  const minC=+$('fc').value,maxC=+$('fcmax').value,minRV=+$('frv').value;
-  const minPr=+$('fmin').value,maxPr=+$('fmax').value,minVol=+$('fvol').value*1e6;
-  const maxMcap=+$('fmcap').value*1e6,maxSupply=+$('fsupply').value*1e6,maxFund=+$('ffund').value;
-  const maxVwapDist=+$('fvwap').value/100,useVwapFilter=$('fvwapcheck').checked;
+  const minC=getF('fc'),maxC=getF('fcmax'),minRV=getF('frv');
+  const minPr=getF('fmin'),maxPr=getF('fmax'),minVol=getF('fvol')!=null?getF('fvol')*1e6:null;
+  const maxMcap=getF('fmcap')!=null?getF('fmcap')*1e6:null;
+  const maxSupply=getF('fsupply')!=null?getF('fsupply')*1e6:null;
+  const maxFund=getF('ffund');
+  const maxVwapDist=getF('fvwap')!=null?getF('fvwap')/100:null;
+  const useVwapFilter=$('fvwapcheck').checked;
   setProg(5,'Fetching tickers…');
   try{
     const res=await fetch('https://api.binance.com/api/v3/ticker/24hr');
@@ -744,7 +763,12 @@ async function runScan(){
     const cands=all.filter(t=>{
       if(!t.symbol.endsWith('USDT')||/UP|DOWN|BEAR|BULL/.test(t.symbol))return false;
       const p=+t.lastPrice,c=+t.priceChangePercent,v=+t.quoteVolume;
-      return p>=minPr&&p<=maxPr&&c>=minC&&c<=maxC&&v>=minVol;
+      if(minPr!=null&&p<minPr)return false;
+      if(maxPr!=null&&p>maxPr)return false;
+      if(minC!=null&&c<minC)return false;
+      if(maxC!=null&&c>maxC)return false;
+      if(minVol!=null&&v<minVol)return false;
+      return true;
     });
     cands.sort((a,b)=>+b.quoteVolume-+a.quoteVolume);
     const top=cands.slice(0,40);
@@ -775,14 +799,14 @@ async function runScan(){
         if(cgd.length){
           const c=cgd[0];
           coin.mcap=c.market_cap;coin.supply=c.circulating_supply;
-          if(maxMcap&&c.market_cap>maxMcap)mcapOk=false;
-          if(maxSupply&&c.circulating_supply>maxSupply*1e6)supplyOk=false;
+          if(maxMcap!=null&&c.market_cap>maxMcap)mcapOk=false;
+          if(maxSupply!=null&&c.circulating_supply>maxSupply*1e6)supplyOk=false;
         }
       }catch(_){}
       try{
         const fr=await fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${coin.pair}&limit=1`);
         const fd=await fr.json();
-        if(fd.length){coin.funding=+fd[0].fundingRate*100;if(Math.abs(coin.funding)>maxFund)fundOk=false;}
+        if(fd.length){coin.funding=+fd[0].fundingRate*100;if(maxFund!=null&&Math.abs(coin.funding)>maxFund)fundOk=false;}
       }catch(_){}
       try{
         const oir=await fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${coin.pair}`);
@@ -790,7 +814,7 @@ async function runScan(){
       }catch(_){}
       // VWAP check using 15m klines
       let vwapOk=true;
-      if(useVwapFilter){
+      if(useVwapFilter&&maxVwapDist!=null){
         try{
           const vr=await fetch(`https://api.binance.com/api/v3/klines?symbol=${coin.pair}&interval=15m&limit=50`);
           const vkl=await vr.json();
