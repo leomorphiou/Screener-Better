@@ -226,6 +226,12 @@ a.blink:hover{opacity:1;text-decoration:underline}
 .btn-back{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;transition:all .2s;backdrop-filter:blur(4px)}
 .btn-back:hover{background:rgba(255,255,255,.3)}
 .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.mode-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text3);padding:5px 12px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;transition:all .2s}
+.mode-btn:hover{border-color:var(--blue);color:var(--blue)}
+.mode-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.sector-header{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:6px 10px;background:var(--bg3);border-radius:8px;margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center}
+.sector-hot{font-size:10px;color:var(--orange);font-weight:700}
+.coil-score{font-size:10px;font-weight:700;background:var(--purple-light,#f5f3ff);color:var(--purple,#7c3aed);padding:3px 8px;border-radius:10px}
 .green{color:var(--green)}.red{color:var(--red)}.orange{color:var(--orange)}.blue{color:var(--blue)}.dim{color:var(--text3)}.yellow{color:var(--yellow)}.purple{color:var(--purple)}
 </style>
 </head>
@@ -275,10 +281,19 @@ a.blink:hover{opacity:1;text-decoration:underline}
     <span class="hstat">🕐 <b id="pkt">—</b></span>
   </div>
   <div id="btcwarn" class="btc-warn">⚠ BTC dropped <span id="btcdrop"></span>% — consider pausing trades</div>
+  <div id="btcpump" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 12px;margin-top:6px;font-size:11px;color:#15803d;font-weight:600"></div>
 </div>
 
 <div id="main">
   <div class="fbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Scan Filters</span>
+      <div style="display:flex;gap:6px">
+        <button id="btn-normal" class="mode-btn on" onclick="setScanMode('normal')">🔍 Normal</button>
+        <button id="btn-coil" class="mode-btn" onclick="setScanMode('coil')">🌀 Coil</button>
+      </div>
+    </div>
+    <div id="coil-hint" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:11px;color:#1d4ed8;margin-bottom:10px;line-height:1.6">🌀 <b>Coil Mode</b> finds coins <i>before</i> they move. Low % change, volume quietly building, price hugging VWAP, RSI neutral, Bollinger Bands squeezing.</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:8px">
       <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fc_on" checked><label for="fc">MIN CHANGE %</label></div><input type="number" id="fc" value="2" step="1"></div>
       <div class="fi"><div class="fi-row"><input type="checkbox" class="fcheck" id="fcmax_on" checked><label for="fcmax">MAX CHANGE %</label></div><input type="number" id="fcmax" value="10" step="1"></div>
@@ -293,7 +308,7 @@ a.blink:hover{opacity:1;text-decoration:underline}
     </div>
 
     <div class="scan-row">
-      <button class="btn-scan" id="scanbtn" onclick="runScan()">▶ RUN SCAN</button>
+      <button class="btn-scan" id="scanbtn" onclick="scanMode==='coil'?runCoilScan():runScan()">▶ RUN SCAN</button>
       <div class="pbar-wrap">
         <div class="pbar-track"><div class="pbar-fill" id="pbar"></div></div>
         <div class="pbar-txt" id="ptxt"></div>
@@ -381,6 +396,47 @@ const fPct=v=>`${v>=0?'+':''}${v.toFixed(2)}%`;
 const fM=v=>v>=1e9?`${(v/1e9).toFixed(1)}B`:v>=1e6?`${(v/1e6).toFixed(1)}M`:`${(v/1e3).toFixed(0)}K`;
 
 let ST={results:[],sel:null,charts:{},tf:'5m',ob:null,btcBook:null,scanning:false,btcPriceAtOpen:null,btcNow:null,funding:null,oi:null,mcap:null,supply:null,news:[]};
+let btcHistory=[];
+let scanMode='normal'; // 'normal' or 'coil'
+
+const SECTORS={
+  'Gaming':['AXS','SAND','MANA','ENJ','GALA','ILV','SLP','ALICE','TLM','PYR','MAGIC','GODS','YGG','GHST','MC','VOXEL','PIXEL'],
+  'L2':['MATIC','OP','ARB','IMX','METIS','BOBA','SKL','CELR','LRC','ZKS','STRK','MANTA','ZETA'],
+  'DeFi':['UNI','AAVE','COMP','MKR','SNX','YFI','CRV','BAL','SUSHI','1INCH','DYDX','GMX','GNS','CAKE','PENDLE','JOE'],
+  'AI':['FET','AGIX','OCEAN','NMR','RNDR','TAO','WLD','ARKM','GRT','API3','CTXC','PHB','VIDT'],
+  'Meme':['DOGE','SHIB','PEPE','FLOKI','BONK','WIF','MEME','TURBO','NEIRO','MOODENG','PNUT','ACT'],
+  'NFT':['APE','BLUR','ENS','LOOKS','BOME','ORDI','SATS'],
+  'Infrastructure':['LINK','GRT','DOT','KSM','ATOM','AVAX','NEAR','HBAR','ONE','EGLD','FTM','ICX'],
+  'Exchange':['BNB','CRO','OKB','KCS','GT','WOO','DYDX'],
+  'Layer1':['ETH','SOL','ADA','AVAX','NEAR','ALGO','HBAR','SUI','APT','SEI','INJ'],
+  'Storage':['FIL','AR','STORJ','BLZ','HOT'],
+  'Privacy':['XMR','ZEC','DASH','SCRT','ROSE'],
+};
+
+function getCoinSector(sym){
+  for(const [sec,coins] of Object.entries(SECTORS)){
+    if(coins.includes(sym)) return sec;
+  }
+  return 'Other';
+}
+
+function bbSqueeze(closes,n=20){
+  const bands=bb(closes,n).filter(b=>b!==null);
+  if(bands.length<15) return false;
+  const widths=bands.map(b=>b.u-b.l);
+  const recent=widths.slice(-5).reduce((a,b)=>a+b,0)/5;
+  const older=widths.slice(-15,-5).reduce((a,b)=>a+b,0)/10;
+  return older>0&&recent<older*0.88;
+}
+
+function volBuilding(candles){
+  if(candles.length<6) return false;
+  const last3=candles.slice(-3).map(c=>c.volume);
+  const prev3=candles.slice(-6,-3).map(c=>c.volume);
+  const avgLast=last3.reduce((a,b)=>a+b,0)/3;
+  const avgPrev=prev3.reduce((a,b)=>a+b,0)/3;
+  return avgLast>avgPrev*1.3; // volume growing 30%+
+}
 let apiKey=localStorage.getItem('akey')||'';
 
 // Toggle filter inputs based on checkbox
@@ -397,6 +453,79 @@ function getF(id) {
   const cb = document.getElementById(id+'_on');
   if(cb && !cb.checked) return null;
   return +document.getElementById(id).value;
+}
+
+function setScanMode(mode){
+  scanMode=mode;
+  $('btn-normal').className='mode-btn'+(mode==='normal'?' on':'');
+  $('btn-coil').className='mode-btn'+(mode==='coil'?' on':'');
+  $('coil-hint').style.display=mode==='coil'?'block':'none';
+}
+
+async function runCoilScan(){
+  $('scanbtn').disabled=true;$('scanbtn').textContent='🌀 SCANNING COILS…';
+  setProg(5,'Fetching tickers…');
+  try{
+    const res=await fetch('https://api.binance.com/api/v3/ticker/24hr');
+    const all=await res.json();
+    const minPr=getF('fmin')||0.01,maxPr=getF('fmax')||5;
+    const minVol=(getF('fvol')||0.3)*1e6;
+    // Coil filter: 0-5% change, some volume, in price range
+    const cands=all.filter(t=>{
+      if(!t.symbol.endsWith('USDT')||/UP|DOWN|BEAR|BULL/.test(t.symbol))return false;
+      const p=+t.lastPrice,c=+t.priceChangePercent,v=+t.quoteVolume;
+      return p>=minPr&&p<=maxPr&&c>=-1&&c<=5&&v>=minVol;
+    });
+    cands.sort((a,b)=>+b.quoteVolume-+a.quoteVolume);
+    const top=cands.slice(0,50);
+    setProg(15,`${cands.length} candidates — analysing coil signals…`);
+    const out=[];
+    for(let i=0;i<top.length;i++){
+      const t=top[i];
+      setProg(15+Math.round((i+1)/top.length*80),`${t.symbol.replace('USDT','')} (${i+1}/${top.length})`);
+      try{
+        const [kl15,kl5]=await Promise.all([
+          fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=15m&limit=50`).then(r=>r.json()),
+          fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=5m&limit=30`).then(r=>r.json()),
+        ]);
+        if(!Array.isArray(kl15)||kl15.length<20) continue;
+        const candles15=kl15.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+        const candles5=kl5.map(k=>({open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+        const closes15=candles15.map(c=>c.close);
+        // Indicators
+        const rv15=rsi(closes15,6);const L=closes15.length-1;
+        const lastRSI=rv15[L];
+        const bbv=bb(closes15,20);
+        const squeeze=bbSqueeze(closes15);
+        const volBuild=volBuilding(candles5);
+        // VWAP
+        let cumPV=0,cumV=0;
+        candles15.forEach(c=>{const tp=(c.high+c.low+c.close)/3;cumPV+=tp*c.volume;cumV+=c.volume;});
+        const vwapVal=cumV>0?cumPV/cumV:0;
+        const vwapDist=vwapVal>0?(+t.lastPrice-vwapVal)/vwapVal*100:999;
+        // Score: RSI 40-60 (+3), BB squeeze (+3), vol building (+2), near VWAP (+3), low change (+1)
+        let score=0;
+        if(lastRSI>=40&&lastRSI<=62) score+=3;
+        if(squeeze) score+=3;
+        if(volBuild) score+=2;
+        if(Math.abs(vwapDist)<=2) score+=3;
+        else if(Math.abs(vwapDist)<=4) score+=1;
+        if(+t.priceChangePercent<=3) score+=1;
+        if(score>=4) out.push({
+          sym:t.symbol.replace('USDT',''),pair:t.symbol,
+          price:+t.lastPrice,chg:+t.priceChangePercent,
+          qv:+t.quoteVolume,rv:1,
+          hi:+t.highPrice,lo:+t.lowPrice,
+          coilScore:score,squeeze,volBuild,
+          vwapDist,vwapVal,rvTag:'coil'
+        });
+      }catch(_){}
+      await sleep(80);
+    }
+    out.sort((a,b)=>b.coilScore-a.coilScore);
+    ST.results=out;renderResults(out);setProg(100,'');
+  }catch(e){setProg(0,`Error: ${e.message}`);}
+  $('scanbtn').disabled=false;$('scanbtn').textContent='▶ RUN SCAN';
 }
 
 function openS(){$('akey').value=apiKey;$('smodal').classList.add('show');}
@@ -437,6 +566,21 @@ async function fetchHeader(){
     } else {
       $('btcwarn').style.display='none';
       if(ST.sel) $('btcwarn2').style.display='none';
+    }
+    // 5-min pump/dump alert
+    btcHistory.push({p,t:Date.now()});
+    btcHistory=btcHistory.filter(h=>Date.now()-h.t<6*60*1000);
+    if(btcHistory.length>=2){
+      const pct=(p-btcHistory[0].p)/btcHistory[0].p*100;
+      const el=$('btcpump');
+      if(Math.abs(pct)>=0.5){
+        const up=pct>0;
+        el.style.display='block';
+        el.style.background=up?'#f0fdf4':'#fff1f2';
+        el.style.borderColor=up?'#86efac':'#fca5a5';
+        el.style.color=up?'#15803d':'#dc2626';
+        el.textContent=`${up?'🚀':'⚠️'} BTC ${up?'pumped':'dumped'} ${Math.abs(pct).toFixed(2)}% in 5min — ${up?'altcoins may follow in 10-15min, scan now':'pause new entries until BTC stabilises'}`;
+      } else el.style.display='none';
     }
   }catch(_){}
   try{
@@ -864,25 +1008,32 @@ function renderResults(coins,sk){
     const idx=coins.indexOf(c);
     const hot=c.rv>=8;
     const early=c.rv>=4&&c.rv<8;
-    const bullish=c.rv>=4&&c.chg>=2;
-    const rvLabel=hot?'🔥 IN PLAY':early?'⚡ EARLY':'';
-    const rvColor=hot?'#ea580c':early?'#16a34a':'';
-    const rvBg=hot?'#fff7ed':early?'#f0fdf4':'';
-    const vwapStr=c.vwapDist!=null?`${c.vwapDist>=0?'+':''}${(c.vwapDist*100).toFixed(1)}% VWAP`:'';
-    const vwapColor=c.vwapDist!=null?(c.vwapDist>0.05?'#ea580c':c.vwapDist>0?'#16a34a':'#dc2626'):'';
+    const isCoil=c.rvTag==='coil';
+    const bullish=(c.rv>=4&&c.chg>=2)||isCoil;
+    const rvLabel=isCoil?'🌀 COIL':hot?'🔥 IN PLAY':early?'⚡ EARLY':'';
+    const rvColor=isCoil?'#7c3aed':hot?'#ea580c':early?'#16a34a':'';
+    const rvBg=isCoil?'#f5f3ff':hot?'#fff7ed':early?'#f0fdf4':'';
+    const vwapDist=c.vwapDist!=null?(typeof c.vwapDist==='number'&&Math.abs(c.vwapDist)<=1?c.vwapDist:c.vwapDist/100*100):null;
+    const vwapStr=vwapDist!=null?`${vwapDist>=0?'+':''}${vwapDist.toFixed(1)}% VWAP`:'';
+    const vwapColor=vwapDist!=null?(vwapDist>5?'#ea580c':vwapDist>0?'#16a34a':'#dc2626'):'';
+    const sector=getCoinSector(c.sym);
     h+=`<div class="coin-card ${bullish?'bull':''}" onclick="openDetail(${idx})">
       <div class="cc-top">
         <div>
           <span class="cc-sym">${c.sym}<span class="cc-pair">/USDT</span></span>
-          ${rvLabel?`<span style="font-size:9px;font-weight:700;background:${rvBg};color:${rvColor};padding:2px 7px;border-radius:10px;margin-left:6px">${rvLabel}</span>`:''}
+          ${rvLabel?`<span style="font-size:9px;font-weight:700;background:${rvBg};color:${rvColor};padding:2px 7px;border-radius:10px;margin-left:5px">${rvLabel}</span>`:''}
+          <span style="font-size:9px;color:var(--text3);margin-left:5px">${sector}</span>
         </div>
-        <span class="cc-chg up">+${c.chg.toFixed(2)}%</span>
+        <div style="text-align:right">
+          <span class="cc-chg ${c.chg>=0?'up':'down'}">${c.chg>=0?'+':''}${c.chg.toFixed(2)}%</span>
+          ${isCoil?`<div style="font-size:9px;color:#7c3aed;font-weight:700;margin-top:2px">Score ${c.coilScore}/12 ${c.squeeze?'· BB Squeeze':''}${c.volBuild?'· Vol↑':''}</div>`:''}
+        </div>
       </div>
       <div class="cc-stats">
         <div class="cc-stat"><div class="cc-stat-label">Price</div><div class="cc-stat-val">$${fP(c.price)}</div></div>
-        <div class="cc-stat"><div class="cc-stat-label">Rel Vol</div><div class="cc-stat-val" style="color:${rvColor||'var(--blue)'}">${c.rv.toFixed(1)}x</div></div>
+        <div class="cc-stat"><div class="cc-stat-label">${isCoil?'Coil':'Rel Vol'}</div><div class="cc-stat-val" style="color:${rvColor||'var(--blue)'}">${isCoil?'Pre-move':c.rv.toFixed(1)+'x'}</div></div>
         <div class="cc-stat"><div class="cc-stat-label">VWAP Dist</div><div class="cc-stat-val" style="color:${vwapColor||'var(--text3)'}">${vwapStr||'—'}</div></div>
-        <div class="cc-stat"><div class="cc-stat-label">MCap</div><div class="cc-stat-val">${c.mcap?fV(c.mcap):'—'}</div></div>
+        <div class="cc-stat"><div class="cc-stat-label">Volume</div><div class="cc-stat-val">${fV(c.qv)}</div></div>
       </div>
     </div>`;
   });
