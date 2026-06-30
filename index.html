@@ -266,42 +266,34 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 <div class="tab-bar">
   <div class="tab on" onclick="showTab('scanner',this)">🔍 Scanner</div>
   <div class="tab" onclick="showTab('listings',this)">🆕 New Listings</div>
+  <div class="tab" onclick="showTab('alpha',this)">🔮 Alpha</div>
 </div>
 
 <!-- SCANNER TAB -->
 <div id="tab-scanner" class="tab-content on">
   <div class="fbox">
     <div class="fhdr">
-      <span class="ftitle">Filters</span>
-      <span style="font-size:10px;color:var(--text3)">uncheck to skip</span>
+      <span class="ftitle">🐱 Smart Auto-Scan</span>
+      <span style="font-size:10px;color:var(--text3)">no setup needed</span>
     </div>
-    <div class="fgrid">
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fc_on" checked><label for="fc">MIN CHANGE %</label></div><input type="number" id="fc" value="1" step="1"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fcx_on" checked><label for="fcx">MAX CHANGE %</label></div><input type="number" id="fcx" value="10" step="1"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="frv_on" checked><label for="frv">MIN REL VOL</label></div><input type="number" id="frv" value="2" step="0.5"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fvol_on" checked><label for="fvol">MIN VOL $M</label></div><input type="number" id="fvol" value="0.5" step="0.5"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fmin_on" checked><label for="fmin">MIN PRICE $</label></div><input type="number" id="fmin" value="0.01" step="0.01"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fmax_on" checked><label for="fmax">MAX PRICE $</label></div><input type="number" id="fmax" value="2" step="0.1"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fmcap_on"><label for="fmcap">MAX MCAP $M</label></div><input type="number" id="fmcap" value="300" step="50" disabled style="opacity:.3"></div>
-      <div class="fi"><div class="fi-row"><input type="checkbox" class="fck" id="fvw_on" checked><label for="fvw">MAX VWAP DIST%</label></div><input type="number" id="fvw" value="5" step="1"></div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">
+      Reads BTC condition, scans all coins, scores them, shows you the best setups ranked. Auto-refreshes every 5 minutes.
     </div>
     <div class="prow">
-      <button class="btn-scan" id="scanbtn" onclick="runScan()">▶ RUN SCAN</button>
-      <button class="btn-scan" onclick="suggestValues()" style="background:linear-gradient(135deg,#d97706,#b45309);box-shadow:0 3px 10px rgba(217,119,6,.3);white-space:nowrap">🎯 Suggest</button>
+      <button class="btn-scan" id="scanbtn" onclick="runScan()">▶ SCAN NOW</button>
       <div class="pw"><div class="pt"><div class="pf" id="pbar"></div></div><div class="pm" id="ptxt"></div></div>
     </div>
-    <div id="suggest-box" style="display:none;background:var(--orange-l);border:1px solid var(--orange-m);border-radius:var(--rs);padding:10px 12px;margin-top:8px;font-size:11px;line-height:1.8;color:var(--text2)"></div>
+    <div id="market-read" style="display:none;background:var(--blue-l);border:1px solid var(--blue-m);border-radius:var(--rs);padding:9px 12px;margin-top:9px;font-size:11px;color:var(--text2);line-height:1.7"></div>
     <div class="srow">
-      <input type="text" id="csearch" class="sinp" placeholder="Search coin — BTC, ETH, DOGE…" onkeydown="if(event.key==='Enter')searchCoin()">
+      <input type="text" id="csearch" class="sinp" placeholder="Search any coin — BTC, ETH, DOGE…" onkeydown="if(event.key==='Enter')searchCoin()">
       <button class="sbtn" onclick="searchCoin()">🔍</button>
     </div>
     <div class="mon-row">
-      <button class="mbtn mbtn-p" onclick="toggleMonitor()">👁 <span id="mon-txt">Start Monitor</span></button>
+      <button class="mbtn mbtn-p" onclick="toggleMonitor()">👁 <span id="mon-txt">Auto-Refresh OFF</span></button>
       <button class="mbtn mbtn-b" onclick="fetchTrending()">🔥 Trending Now</button>
     </div>
     <div id="monitor-status" style="display:none;font-size:10px;color:var(--purple);font-weight:600;margin-top:6px;text-align:center"></div>
-  </div>
-  <div id="reswrap">
+  </div>  <div id="reswrap">
     <div class="empty"><div class="empty-i">🐱</div><div class="empty-t">Ready to scan</div><div class="empty-s">Find coins before they move<br>No time restrictions — trade good setups anytime</div></div>
   </div>
 </div>
@@ -318,6 +310,20 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div id="nl-refresh" class="nl-refresh-in" style="display:none">Next check in <span id="nl-countdown">30</span>s</div>
   <div id="nl-content">
     <div class="empty"><div class="empty-i">🆕</div><div class="empty-t">New Listings Tracker</div><div class="empty-s">Monitors Binance every 30s for new coins<br>Sends alert the moment a new pair appears<br>Press Start to begin monitoring</div></div>
+  </div>
+</div>
+
+<!-- ALPHA TAB -->
+<div id="tab-alpha" class="tab-content">
+  <div class="nl-status">
+    <div><span class="hs" style="color:var(--text2)">🔮 Binance Alpha — early access tokens, higher risk/reward</span></div>
+    <button class="mbtn mbtn-p" style="padding:6px 14px;flex:none" onclick="scanAlpha()">▶ Scan Alpha</button>
+  </div>
+  <div id="alpha-prow" class="prow" style="display:none;margin-bottom:10px">
+    <div class="pw"><div class="pt"><div class="pf" id="alpha-pbar"></div></div><div class="pm" id="alpha-ptxt"></div></div>
+  </div>
+  <div id="alpha-content">
+    <div class="empty"><div class="empty-i">🔮</div><div class="empty-t">Binance Alpha Tokens</div><div class="empty-s">Pre-listing tokens, often on BSC<br>Higher risk, higher reward potential<br>Lower liquidity — size positions small</div></div>
   </div>
 </div>
 
@@ -615,34 +621,114 @@ function mScore(coin){
 
 // ═══════════════ PATTERN DETECTION ═══════════════
 function detectPats(candles){
-  const out=[];const n=candles.length;if(n<5)return out;
-  const c=candles[n-1],p=candles[n-2],p2=candles[n-3];
+  const out=[];const n=candles.length;if(n<6)return out;
+  const c=candles[n-1],p=candles[n-2],p2=candles[n-3],p3=candles[n-4],p4=candles[n-5],p5=candles[n-6];
   const body=x=>Math.abs(x.close-x.open),uw=x=>x.high-Math.max(x.open,x.close);
   const lw=x=>Math.min(x.open,x.close)-x.low,rng=x=>x.high-x.low||.0001;
-  const grn=x=>x.close>=x.open,mid=x=>(x.open+x.close)/2;
-  if(!grn(p)&&grn(c)&&c.open<p.close&&c.close>p.open&&body(c)>body(p))out.push({t:'🟢 Bullish Engulfing',s:'bull'});
-  if(grn(p)&&!grn(c)&&c.open>p.close&&c.close<p.open&&body(c)>body(p))out.push({t:'🔴 Bearish Engulfing',s:'bear'});
-  if(lw(c)>=2*body(c)&&uw(c)<=body(c)*.4&&!grn(c))out.push({t:'🔨 Hammer',s:'bull'});
-  if(lw(c)>=2*body(c)&&uw(c)<=body(c)*.4&&grn(c))out.push({t:'🟩 Bull Hammer',s:'bull'});
-  if(uw(c)>=2*body(c)&&lw(c)<=body(c)*.4)out.push({t:'⭐ Shooting Star',s:'bear'});
-  if(!grn(p2)&&body(p)<body(p2)*.4&&grn(c)&&c.close>mid(p2))out.push({t:'🌅 Morning Star',s:'bull'});
-  if(grn(p2)&&body(p)<body(p2)*.4&&!grn(c)&&c.close<mid(p2))out.push({t:'🌆 Evening Star',s:'bear'});
-  if(grn(p2)&&grn(p)&&grn(c)&&c.open>p.open&&p.open>p2.open)out.push({t:'💚 3 Green Soldiers',s:'bull'});
-  if(!grn(p2)&&!grn(p)&&!grn(c)&&c.open<p.open&&p.open<p2.open)out.push({t:'🦅 3 Red Crows',s:'bear'});
-  if(!grn(p)&&grn(c)&&c.open>=p.close&&c.open<=p.open&&c.close>mid(p))out.push({t:'🌙 Piercing Line',s:'bull'});
-  if(grn(p)&&!grn(c)&&c.open<=p.close&&c.open>=p.open&&c.close<mid(p))out.push({t:'☁️ Dark Cloud',s:'bear'});
-  if(!grn(p)&&grn(c)&&c.open>p.open&&c.close<p.close&&body(c)<body(p)*.6)out.push({t:'🫂 Bull Harami',s:'bull'});
-  if(grn(p)&&!grn(c)&&c.open<p.close&&c.close>p.open&&body(c)<body(p)*.6)out.push({t:'👹 Bear Harami',s:'bear'});
-  if(body(c)<rng(c)*.1&&uw(c)>=rng(c)*.6&&!grn(p))out.push({t:'🐉 Dragonfly Doji',s:'bull'});
-  if(body(c)<rng(c)*.1&&uw(c)>=rng(c)*.6&&grn(p))out.push({t:'🪦 Gravestone Doji',s:'bear'});
-  if(body(c)<rng(c)*.1&&uw(c)>rng(c)*.3&&lw(c)>rng(c)*.3)out.push({t:'〰️ Doji',s:'neu'});
-  if(grn(c)&&body(c)>=rng(c)*.85)out.push({t:'🟢 Bull Marubozu',s:'bull'});
-  if(!grn(c)&&body(c)>=rng(c)*.85)out.push({t:'🔴 Bear Marubozu',s:'bear'});
+  const grn=x=>x.close>=x.open,red=x=>x.close<x.open,mid=x=>(x.open+x.close)/2;
+  const avgBody=candles.slice(-10).reduce((s,x)=>s+body(x),0)/10;
+
+  // ── SINGLE CANDLE PATTERNS ──
+  if(!grn(p)&&grn(c)&&c.open<p.close&&c.close>p.open&&body(c)>body(p))out.push({t:'🟢 Bullish Engulfing',s:'bull',w:3});
+  if(grn(p)&&red(c)&&c.open>p.close&&c.close<p.open&&body(c)>body(p))out.push({t:'🔴 Bearish Engulfing',s:'bear',w:3});
+  if(lw(c)>=2*body(c)&&uw(c)<=body(c)*.4&&red(c)&&body(c)<avgBody*.8)out.push({t:'🔨 Hammer',s:'bull',w:2});
+  if(lw(c)>=2*body(c)&&uw(c)<=body(c)*.4&&grn(c))out.push({t:'🟩 Bullish Hammer',s:'bull',w:2});
+  if(uw(c)>=2*body(c)&&lw(c)<=body(c)*.4&&grn(p))out.push({t:'⭐ Shooting Star',s:'bear',w:2});
+  if(lw(c)>=2*body(c)&&uw(c)<=body(c)*.4&&grn(p)&&grn(p2))out.push({t:'🪓 Hanging Man',s:'bear',w:2});
+  if(uw(c)>=2*body(c)&&lw(c)<=body(c)*.4&&red(p)&&red(p2))out.push({t:'🙃 Inverted Hammer',s:'bull',w:2});
+  if(body(c)<rng(c)*.1&&uw(c)>=rng(c)*.6&&lw(c)<rng(c)*.15&&red(p))out.push({t:'🐉 Dragonfly Doji',s:'bull',w:2});
+  if(body(c)<rng(c)*.1&&lw(c)>=rng(c)*.6&&uw(c)<rng(c)*.15&&grn(p))out.push({t:'🪦 Gravestone Doji',s:'bear',w:2});
+  if(body(c)<rng(c)*.1&&uw(c)>rng(c)*.3&&lw(c)>rng(c)*.3)out.push({t:'〰️ Doji (indecision)',s:'neu',w:1});
+  if(body(c)<rng(c)*.05)out.push({t:'➖ Four-Price Doji',s:'neu',w:1});
+  if(grn(c)&&body(c)>=rng(c)*.9&&uw(c)<rng(c)*.05&&lw(c)<rng(c)*.05)out.push({t:'🟢 Bullish Marubozu',s:'bull',w:3});
+  if(red(c)&&body(c)>=rng(c)*.9&&uw(c)<rng(c)*.05&&lw(c)<rng(c)*.05)out.push({t:'🔴 Bearish Marubozu',s:'bear',w:3});
+  if(body(c)>avgBody*2&&grn(c))out.push({t:'🟢 Long Bullish Candle',s:'bull',w:1});
+  if(body(c)>avgBody*2&&red(c))out.push({t:'🔴 Long Bearish Candle',s:'bear',w:1});
+  if(uw(c)>body(c)*1.5&&lw(c)>body(c)*1.5&&body(c)<rng(c)*.3)out.push({t:'🎡 High Wave Candle',s:'neu',w:1});
+  if(body(c)<avgBody*.3&&uw(c)<rng(c)*.2&&lw(c)<rng(c)*.2)out.push({t:'🔹 Spinning Top',s:'neu',w:1});
+
+  // ── TWO CANDLE PATTERNS ──
+  if(!grn(p)&&grn(c)&&c.open>=p.close&&c.open<=p.open&&c.close>mid(p))out.push({t:'🌙 Piercing Line',s:'bull',w:2});
+  if(grn(p)&&red(c)&&c.open<=p.close&&c.open>=p.open&&c.close<mid(p))out.push({t:'☁️ Dark Cloud Cover',s:'bear',w:2});
+  if(!grn(p)&&grn(c)&&c.open>p.open&&c.close<p.close&&body(c)<body(p)*.6)out.push({t:'🫂 Bullish Harami',s:'bull',w:2});
+  if(grn(p)&&red(c)&&c.open<p.close&&c.close>p.open&&body(c)<body(p)*.6)out.push({t:'👹 Bearish Harami',s:'bear',w:2});
+  if(!grn(p)&&grn(c)&&Math.abs(c.high-p.high)<rng(p)*.05&&body(c)>avgBody*.5)out.push({t:'🪜 Tweezer Top Reject',s:'bear',w:1});
+  if(!grn(p)&&grn(c)&&Math.abs(c.low-p.low)<rng(p)*.05)out.push({t:'📌 Tweezer Bottom',s:'bull',w:2});
+  if(grn(p)&&red(c)&&Math.abs(c.high-p.high)<rng(p)*.05)out.push({t:'📍 Tweezer Top',s:'bear',w:2});
+  if(grn(p)&&grn(c)&&c.close>p.high&&c.open>p.close)out.push({t:'🪟 Bullish Gap Up',s:'bull',w:2});
+  if(red(p)&&red(c)&&c.close<p.low&&c.open<p.close)out.push({t:'🕳️ Bearish Gap Down',s:'bear',w:2});
+  if(red(p)&&grn(c)&&body(c)>body(p)*1.5&&c.close>p.open)out.push({t:'🔄 Bullish Kicker',s:'bull',w:3});
+  if(grn(p)&&red(c)&&body(c)>body(p)*1.5&&c.close<p.open)out.push({t:'🔃 Bearish Kicker',s:'bear',w:3});
+  if(red(p)&&grn(c)&&c.open<p.low&&c.close>mid(p))out.push({t:'🟰 Bullish Belt Hold',s:'bull',w:1});
+  if(grn(p)&&red(c)&&c.open>p.high&&c.close<mid(p))out.push({t:'➗ Bearish Belt Hold',s:'bear',w:1});
+  if(grn(p)&&grn(c)&&c.open<=p.close&&c.open>=p.open&&c.close>p.high)out.push({t:'🪡 Bullish Separating Lines',s:'bull',w:1});
+
+  // ── THREE CANDLE PATTERNS ──
+  if(!grn(p2)&&body(p)<body(p2)*.4&&grn(c)&&c.close>mid(p2))out.push({t:'🌅 Morning Star',s:'bull',w:3});
+  if(grn(p2)&&body(p)<body(p2)*.4&&red(c)&&c.close<mid(p2))out.push({t:'🌆 Evening Star',s:'bear',w:3});
+  if(!grn(p2)&&body(p)<rng(p)*.1&&grn(c)&&c.close>mid(p2))out.push({t:'⭐ Morning Doji Star',s:'bull',w:3});
+  if(grn(p2)&&body(p)<rng(p)*.1&&red(c)&&c.close<mid(p2))out.push({t:'✴️ Evening Doji Star',s:'bear',w:3});
+  if(grn(p2)&&grn(p)&&grn(c)&&c.open>p.open&&p.open>p2.open&&c.close>p.close&&p.close>p2.close)out.push({t:'💚 Three White Soldiers',s:'bull',w:3});
+  if(!grn(p2)&&!grn(p)&&!grn(c)&&c.open<p.open&&p.open<p2.open&&c.close<p.close&&p.close<p2.close)out.push({t:'🦅 Three Black Crows',s:'bear',w:3});
+  if(grn(p2)&&red(p)&&grn(c)&&body(p)<body(p2)*.5&&body(p)<body(c)*.5&&c.close>p2.close)out.push({t:'📈 Three Inside Up',s:'bull',w:2});
+  if(red(p2)&&grn(p)&&red(c)&&body(p)<body(p2)*.5&&c.close<p2.close)out.push({t:'📉 Three Inside Down',s:'bear',w:2});
+  if(grn(p2)&&grn(p)&&grn(c)&&c.close>p.close&&p.open>p2.open&&p.open<p2.close)out.push({t:'🔺 Three Outside Up',s:'bull',w:2});
+  if(!grn(p2)&&!grn(p)&&!grn(c)&&c.close<p.close&&p.open<p2.open&&p.open>p2.close)out.push({t:'🔻 Three Outside Down',s:'bear',w:2});
+  if(grn(p2)&&red(p)&&red(p3)&&grn(c)&&c.close>p3.close&&body(p)<body(p2)*.5&&body(p3)<body(p2)*.5)out.push({t:'📊 Rising Three Methods',s:'bull',w:2});
+  if(!grn(p2)&&grn(p)&&grn(p3)&&red(c)&&c.close<p3.close&&body(p)<body(p2)*.5&&body(p3)<body(p2)*.5)out.push({t:'📉 Falling Three Methods',s:'bear',w:2});
+  if(grn(p2)&&grn(p)&&grn(c)&&Math.abs(p.open-p2.close)<rng(p2)*.05&&Math.abs(c.open-p.close)<rng(p)*.05)out.push({t:'🪜 Bullish Stair Pattern',s:'bull',w:1});
+  if(red(p2)&&body(p)<body(p2)*.3&&grn(c)&&c.close>p2.open)out.push({t:'🛏️ Stick Sandwich (bull)',s:'bull',w:2});
+  if(red(p2)&&grn(p)&&red(c)&&Math.abs(c.close-p2.close)<rng(p2)*.05)out.push({t:'🥪 Stick Sandwich (bear)',s:'bear',w:2});
+  if(red(p2)&&grn(p)&&body(p)<body(p2)*.5&&red(c)&&c.close<p.low)out.push({t:'⚠️ Bearish Deliberation',s:'bear',w:1});
+  if(grn(p2)&&grn(p)&&body(p)<body(p2)&&grn(c)&&body(c)<body(p))out.push({t:'🤔 Bullish Deliberation (weak)',s:'neu',w:1});
+  if(grn(p2)&&grn(p)&&red(c)&&c.open>p.close&&c.close<mid(p))out.push({t:'🌑 Advance Block',s:'bear',w:1});
+  if(red(p2)&&red(p)&&body(c)<body(p)*.5&&c.low>p.low)out.push({t:'🛑 Downside Tasuki (weak)',s:'neu',w:1});
+
+  // ── MULTI-CANDLE / STRUCTURE PATTERNS (5-6 candles) ──
+  if(p4&&p5){
+    const seq=[p5,p4,p3,p2,p];
+    const allGreen=seq.every(grn),allRed=seq.every(red);
+    if(allGreen&&red(c)&&body(c)>avgBody)out.push({t:'🏃 Exhausted Bull Run (reversal risk)',s:'bear',w:2});
+    if(allRed&&grn(c)&&body(c)>avgBody)out.push({t:'🏃 Exhausted Bear Run (bounce risk)',s:'bull',w:2});
+  }
+  // Cup pattern (simplified): price dips and recovers over 6 candles
+  if(p5){
+    const closes6=[p5,p4,p3,p2,p,c].map(x=>x.close);
+    const minIdx=closes6.indexOf(Math.min(...closes6));
+    if(minIdx>=1&&minIdx<=4&&closes6[5]>closes6[0]*0.98&&closes6[minIdx]<closes6[0]*0.97)
+      out.push({t:'☕ Cup Formation (recovering)',s:'bull',w:2});
+  }
+  // Double bottom check over last 10
+  if(n>=10){
+    const last10=candles.slice(-10);
+    const lows10=last10.map(x=>x.low);
+    const minVal=Math.min(...lows10);
+    const minIndices=lows10.map((v,i)=>v<=minVal*1.005?i:-1).filter(i=>i>=0);
+    if(minIndices.length>=2&&minIndices[minIndices.length-1]-minIndices[0]>=3&&grn(c))
+      out.push({t:'〰️ Double Bottom (forming)',s:'bull',w:2});
+    const highs10=last10.map(x=>x.high);
+    const maxVal=Math.max(...highs10);
+    const maxIndices=highs10.map((v,i)=>v>=maxVal*0.995?i:-1).filter(i=>i>=0);
+    if(maxIndices.length>=2&&maxIndices[maxIndices.length-1]-maxIndices[0]>=3&&red(c))
+      out.push({t:'〰️ Double Top (forming)',s:'bear',w:2});
+  }
+
+  // ── SUPPORT / RESISTANCE STRUCTURE ──
   const lows=candles.slice(-20).map(x=>x.low),highs=candles.slice(-20).map(x=>x.high);
   const sup=Math.min(...lows),res=Math.max(...highs);
-  if(Math.abs(c.close-sup)/c.close<.012)out.push({t:`📊 At Support $${fP(sup)}`,s:'bull'});
-  if(Math.abs(c.close-res)/c.close<.012)out.push({t:`🚧 At Resistance $${fP(res)}`,s:'bear'});
-  return out;
+  if(Math.abs(c.close-sup)/c.close<.012)out.push({t:`📊 At Support $${fP(sup)}`,s:'bull',w:2});
+  if(Math.abs(c.close-res)/c.close<.012)out.push({t:`🚧 At Resistance $${fP(res)}`,s:'bear',w:2});
+  // Breakout detection
+  if(n>=15){
+    const prior15High=Math.max(...candles.slice(-16,-1).map(x=>x.high));
+    if(c.close>prior15High&&grn(c))out.push({t:'🚀 Breakout Above Range',s:'bull',w:3});
+    const prior15Low=Math.min(...candles.slice(-16,-1).map(x=>x.low));
+    if(c.close<prior15Low&&red(c))out.push({t:'📉 Breakdown Below Range',s:'bear',w:3});
+  }
+
+  // Sort by weight (strongest signals first), dedupe similar
+  out.sort((a,b)=>(b.w||1)-(a.w||1));
+  return out.slice(0,8); // cap to avoid clutter, show strongest
 }
 
 // ═══════════════ CATALYST CLASSIFIER ═══════════════
@@ -771,33 +857,80 @@ function drawMACD(candles,el){
 }
 
 // ═══════════════ SCAN ═══════════════
+// ═══════════════ MARKET CONDITION READER ═══════════════
+async function readMarket(){
+  const fng=parseInt(($('fng').textContent||'50').replace(/[^0-9]/g,''))||50;
+  const btcBook=ST.btcBook?.bp||50;
+  const btcChg=parseFloat(($('btcc').textContent||'0').replace(/[^0-9.\-+]/g,''))||0;
+  let btcTrend='sideways',btcTrendPct=0;
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=6');
+    const kl=await r.json();
+    if(Array.isArray(kl)&&kl.length>=2){btcTrendPct=(+kl[kl.length-1][4]-+kl[0][4])/+kl[0][4]*100;btcTrend=btcTrendPct>1?'up':btcTrendPct<-1?'down':'sideways';}
+  }catch(_){}
+  const bullish=fng>=50&&btcBook>=52&&btcTrend==='up';
+  const bearish=fng<=35||btcBook<=43||btcTrend==='down';
+  const extremeFear=fng<=25,greed=fng>=70;
+  let cond,emoji,maxC,minRV,maxVwap;
+  if(extremeFear){cond='Extreme Fear';emoji='😱';maxC=6;minRV=4;maxVwap=2;}
+  else if(bearish){cond='Bearish';emoji='🐻';maxC=7;minRV=3.5;maxVwap=3;}
+  else if(greed){cond='Greed Zone — most coins already ran';emoji='🤑';maxC=6;minRV=2.5;maxVwap=3;}
+  else if(bullish){cond='Bullish';emoji='🟢';maxC=10;minRV=2;maxVwap=5;}
+  else{cond='Neutral';emoji='😐';maxC=8;minRV=2.5;maxVwap=4;}
+  return{cond,emoji,fng,btcBook,btcTrend,btcChg,maxC,minRV,maxVwap};
+}
+
+// ═══════════════ SECTOR ROTATION ═══════════════
+function detectSectorRotation(coins){
+  const counts={};
+  coins.slice(0,15).forEach(c=>{const s=getSector(c.sym);if(s)counts[s]=(counts[s]||0)+1;});
+  const hot=Object.entries(counts).filter(([s,n])=>n>=3).sort((a,b)=>b[1]-a[1]);
+  return hot.length?hot[0]:null;
+}
+
+// ═══════════════ WHY THIS COIN ═══════════════
+function whyThisCoin(coin){
+  const reasons=[];
+  if(coin.rv>=6)reasons.push(`${coin.rv.toFixed(1)}x normal volume`);
+  else if(coin.rv>=3)reasons.push(`volume building (${coin.rv.toFixed(1)}x)`);
+  if(coin.hLows)reasons.push('higher lows forming');
+  if(coin.volBld)reasons.push('volume accelerating');
+  if(coin.squeeze)reasons.push('BB squeeze (coiling)');
+  if(coin.vwapDist!=null&&Math.abs(coin.vwapDist)<=2)reasons.push('right at VWAP');
+  if(coin.chg>=0.5&&coin.chg<=4)reasons.push('still early — hasn\'t run yet');
+  if(coin.patternSignal==='bull')reasons.push('bullish candle pattern');
+  if(!reasons.length)reasons.push('decent overall setup');
+  return reasons.slice(0,3).join(' · ');
+}
+
+// ═══════════════ SMART AUTO-SCAN ═══════════════
 async function runScan(){
   if(ST.scanning)return;
   ST.scanning=true;btcRef=ST.btcNow;
   $('scanbtn').disabled=true;$('scanbtn').textContent='⏳ SCANNING…';
-  const minC=getF('fc'),maxC=getF('fcx'),minRV=getF('frv');
-  const minPr=getF('fmin'),maxPr=getF('fmax'),minVol=getF('fvol')!=null?getF('fvol')*1e6:null;
-  const maxMcap=getF('fmcap')!=null?getF('fmcap')*1e6:null;
-  const useVwap=$('fvw_on').checked,maxVwap=getF('fvw');
-  setProg(5,'Fetching tickers…');
+  setProg(3,'Reading market condition…');
+  const mkt=await readMarket();
+  $('market-read').style.display='block';
+  $('market-read').innerHTML=`<b>${mkt.emoji} ${mkt.cond}</b> · F&G ${mkt.fng} · BTC Book ${mkt.btcBook}% Buy · BTC 1h ${mkt.btcTrend} — auto-tuned thresholds applied`;
+  setProg(8,'Fetching all coins…');
   try{
     const res=await fetch('https://api.binance.com/api/v3/ticker/24hr');
     const all=await res.json();
     const cands=all.filter(t=>{
       if(!t.symbol.endsWith('USDT')||/UP|DOWN|BEAR|BULL/.test(t.symbol))return false;
       const p=+t.lastPrice,c=+t.priceChangePercent,v=+t.quoteVolume;
-      if(minPr!=null&&p<minPr)return false;if(maxPr!=null&&p>maxPr)return false;
-      if(minC!=null&&c<minC)return false;if(maxC!=null&&c>maxC)return false;
-      if(minVol!=null&&v<minVol)return false;
+      if(p<0.01||p>5)return false;
+      if(c<0.3||c>mkt.maxC+3)return false; // soft pre-filter, allow a little buffer before score
+      if(v<300000)return false;
       return true;
     });
     cands.sort((a,b)=>+b.quoteVolume-+a.quoteVolume);
-    const top=cands.slice(0,40);
-    setProg(12,`${cands.length} matched — checking rel vol + signals…`);
+    const top=cands.slice(0,45);
+    setProg(15,`${cands.length} candidates — analyzing each…`);
     const out=[];
     for(let i=0;i<top.length;i++){
       const t=top[i];
-      setProg(12+Math.round((i+1)/top.length*75),`${t.symbol.replace('USDT','')} (${i+1}/${top.length})`);
+      setProg(15+Math.round((i+1)/top.length*75),`${t.symbol.replace('USDT','')} (${i+1}/${top.length})`);
       try{
         const[dkl,kl15]=await Promise.all([
           fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=1d&limit=31`).then(r=>r.json()),
@@ -807,50 +940,57 @@ async function runScan(){
         const hist=dkl.slice(0,-1);
         const avgVol=hist.reduce((s,k)=>s+parseFloat(k[5]),0)/hist.length;
         const rv=annRelVol(parseFloat(t.volume),avgVol);
-        if(minRV!=null&&rv<minRV)continue;
-        const c15=Array.isArray(kl15)?kl15.map(k=>({time:+k[0],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]})):[];
+        if(rv<mkt.minRV*0.6)continue; // soft filter, scoring handles the rest
+        const c15=Array.isArray(kl15)?kl15.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]})):[];
         const cl15=c15.map(c=>c.close);
         let vwapVal=null,vwapDist=null;
         if(c15.length){let cp=0,cv=0;c15.forEach(c=>{const tp=(c.high+c.low+c.close)/3;cp+=tp*c.volume;cv+=c.volume;});vwapVal=cv>0?cp/cv:null;if(vwapVal)vwapDist=(+t.lastPrice-vwapVal)/vwapVal*100;}
-        if(useVwap&&maxVwap!=null&&vwapDist!=null&&(vwapDist>maxVwap||vwapDist<-3))continue;
         const squeeze=bbSqueeze(cl15),volBld=volBuilding(c15),hLows=higherLows(c15,6);
-        let mcap=null;
-        if(maxMcap!=null){try{const cg=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&symbols=${t.symbol.replace('USDT','').toLowerCase()}&per_page=3&sparkline=false`).then(r=>r.json());if(cg.length){mcap=cg[0].market_cap;if(mcap>maxMcap)continue;}}catch(_){}}
-        const coin={sym:t.symbol.replace('USDT',''),pair:t.symbol,price:+t.lastPrice,chg:+t.priceChangePercent,qv:+t.quoteVolume,rv,hi:+t.highPrice,lo:+t.lowPrice,vwapVal,vwapDist,squeeze,volBld,hLows,mcap};
+        const pats=c15.length>=10?detectPats(c15.slice(-10)):[];
+        const bullPats=pats.filter(p=>p.s==='bull').length,bearPats=pats.filter(p=>p.s==='bear').length;
+        const patternSignal=bullPats>bearPats?'bull':bearPats>bullPats?'bear':'neutral';
+        const coin={sym:t.symbol.replace('USDT',''),pair:t.symbol,price:+t.lastPrice,chg:+t.priceChangePercent,qv:+t.quoteVolume,rv,hi:+t.highPrice,lo:+t.lowPrice,vwapVal,vwapDist,squeeze,volBld,hLows,mcap:null,patternSignal,patternCount:pats.length};
         coin.momentum=mScore(coin);
+        if(patternSignal==='bull')coin.momentum=Math.min(100,coin.momentum+8);
+        if(patternSignal==='bear')coin.momentum=Math.max(0,coin.momentum-12);
         out.push(coin);
       }catch(_){}
-      await sl(80);
+      await sl(70);
     }
     out.sort((a,b)=>b.momentum-a.momentum);
-    ST.results=out;renderResults(out);setProg(100,'');
-    if(out.length&&monitorActive)checkAlerts(out);
+    const topResults=out.slice(0,15);
+    const rotation=detectSectorRotation(topResults);
+    if(rotation){
+      $('market-read').innerHTML+=`<br>🔄 <b>Sector Rotation:</b> ${rotation[0]} (${rotation[1]} coins in top results) — money flowing here`;
+    }
+    ST.results=topResults;renderResults(topResults);setProg(100,'');
+    if(topResults.length&&monitorActive)checkAlerts(topResults);
   }catch(e){setProg(0,`Error: ${e.message}`);}
-  $('scanbtn').disabled=false;$('scanbtn').textContent='▶ RUN SCAN';ST.scanning=false;
+  $('scanbtn').disabled=false;$('scanbtn').textContent='▶ SCAN NOW';ST.scanning=false;
 }
 const setProg=(p,t)=>{$('pbar').style.width=p+'%';$('ptxt').textContent=t;};
 
 // ═══════════════ RENDER RESULTS ═══════════════
 function renderResults(coins,sk){
   if(sk)sortKey=sk;
-  if(!coins||!coins.length){$('reswrap').innerHTML=`<div class="empty"><div class="empty-i">📭</div><div class="empty-t">No coins matched</div><div class="empty-s">Try lowering MIN % or REL VOL<br>or uncheck some filters</div></div>`;return;}
+  if(!coins||!coins.length){$('reswrap').innerHTML=`<div class="empty"><div class="empty-i">📭</div><div class="empty-t">No strong setups right now</div><div class="empty-s">Market may be quiet — try again in a few minutes<br>or check Trending / New Listings tab</div></div>`;return;}
   const sorted=[...coins].sort((a,b)=>sortKey==='momentum'?b.momentum-a.momentum:sortKey==='rv'?b.rv-a.rv:sortKey==='chg'?b.chg-a.chg:b.qv-a.qv);
   const btns=['momentum','rv','chg','vol'].map(k=>`<button class="sbt${sortKey===k?' on':''}" onclick="renderResults(ST.results,'${k}')">${k==='momentum'?'⚡ Score':k==='rv'?'Rel Vol':k==='chg'?'Change':'Volume'}</button>`).join('');
-  let h=`<div class="res-hdr"><span class="res-count">✦ ${sorted.length} coins</span><div class="sbts">${btns}</div></div><div class="cards">`;
+  let h=`<div class="res-hdr"><span class="res-count">✦ Top ${sorted.length} setups</span><div class="sbts">${btns}</div></div><div class="cards">`;
   sorted.forEach((c,i)=>{
     const idx=coins.indexOf(c),hot=c.rv>=8,early=c.rv>=3&&c.rv<8,isCoil=c.squeeze&&c.chg<=3&&c.rv>=2;
     const sector=getSector(c.sym);
     const scoreCol=c.momentum>=70?'var(--green)':c.momentum>=50?'var(--orange)':'var(--text3)';
     const vd=c.vwapDist!=null?c.vwapDist:null,vdStr=vd!=null?`${vd>=0?'+':''}${vd.toFixed(1)}%`:'—',vdCol=vd!=null?(vd>5?'var(--orange)':vd>=0?'var(--green)':'var(--blue)'):'var(--text3)';
-    const warns=[];if(c.chg>10)warns.push('Already +'+c.chg.toFixed(0)+'%');if(vd!=null&&vd>8)warns.push('Far above VWAP');
+    const warns=[];if(c.chg>10)warns.push('Already +'+c.chg.toFixed(0)+'%');if(vd!=null&&vd>8)warns.push('Far above VWAP');if(c.patternSignal==='bear')warns.push('bearish pattern detected');
     let cardCls='card';if(isCoil)cardCls+=' coil';else if(hot||early)cardCls+=' bull';if(warns.length)cardCls+=' danger';
+    const why=whyThisCoin(c);
     h+=`<div class="${cardCls}" onclick="openDetail(${idx})">
       <div class="ct">
         <div class="cn">
+          ${i===0?'<span style="font-size:13px">🥇</span>':i===1?'<span style="font-size:13px">🥈</span>':i===2?'<span style="font-size:13px">🥉</span>':''}
           <span class="csym">${c.sym}</span>
           ${hot?'<span class="tag t-hot">🔥 IN PLAY</span>':early?'<span class="tag t-early">⚡ BUILDING</span>':isCoil?'<span class="tag t-coil">🌀 COIL</span>':''}
-          ${c.hLows?'<span class="tag" style="background:var(--purple-l);color:var(--purple)">↗ HLows</span>':''}
-          ${c.volBld?'<span class="tag" style="background:var(--green-l);color:var(--green)">Vol↑</span>':''}
           ${sector?`<span class="csec">${sector}</span>`:''}
         </div>
         <div class="cr">
@@ -858,6 +998,7 @@ function renderResults(coins,sk){
           <div class="cscore" style="color:${scoreCol}">Score ${c.momentum}/100</div>
         </div>
       </div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:8px;line-height:1.5">💡 ${why}</div>
       <div class="cst">
         <div class="cs"><div class="csl">Price</div><div class="csv">$${fP(c.price)}</div></div>
         <div class="cs"><div class="csl">Rel Vol</div><div class="csv" style="color:${hot?'var(--orange)':early?'var(--green)':'var(--blue)'}">${c.rv.toFixed(1)}x</div></div>
@@ -1190,107 +1331,77 @@ RISK: [1 sentence]`;
   $('aibtn').disabled=false;$('aibtn').textContent='🤖 GET ENTRY · TP · SL';
 }
 
-// ═══════════════ VALUE SUGGESTER ═══════════════
-async function suggestValues(){
-  const box=$('suggest-box');
-  box.style.display='block';
-  box.innerHTML='🎯 Reading market conditions…';
-
-  // Gather all signals
-  const fng=parseInt($('fng').textContent)||50;
-  const btcBook=ST.btcBook?.bp||50;
-  const btcChg=parseFloat($('btcc').textContent)||0;
-
-  // Also check BTC 1h trend
-  let btcTrend='sideways';
+// ═══════════════ BINANCE ALPHA ═══════════════
+let alphaTokens=[];
+async function scanAlpha(){
+  $('alpha-prow').style.display='flex';
+  const setAP=(p,t)=>{$('alpha-pbar').style.width=p+'%';$('alpha-ptxt').textContent=t;};
+  setAP(10,'Fetching Alpha token list…');
   try{
-    const r=await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=6');
-    const kl=await r.json();
-    if(Array.isArray(kl)&&kl.length>=2){
-      const first=+kl[0][4],last=+kl[kl.length-1][4];
-      const pct=(last-first)/first*100;
-      btcTrend=pct>1?'up':pct<-1?'down':'sideways';
-    }
-  }catch(_){}
-
-  // Determine market condition
-  let condition,emoji,reason;
-  const bullish=fng>=50&&btcBook>=52&&btcTrend==='up'&&btcChg>0;
-  const bearish=fng<=35||btcBook<=43||btcTrend==='down';
-  const extreme_fear=fng<=25;
-  const greed=fng>=70;
-
-  if(extreme_fear){
-    condition='Extreme Fear';emoji='😱';
-    reason='Market is panicking. Only trade coins with strong negative funding (shorts being squeezed) or coins completely disconnected from BTC.';
-    setFilters({fc:2,fcx:6,frv:4,fvol:1,fmin:0.01,fmax:1,fvw:2,fvw_on:true});
-  } else if(bearish){
-    condition='Bearish/Cautious';emoji='🐻';
-    reason='BTC weak or fear elevated. Tighten everything — only the cleanest setups with strong vol and near VWAP.';
-    setFilters({fc:2,fcx:7,frv:3.5,fvol:1,fmin:0.01,fmax:1.5,fvw:3,fvw_on:true});
-  } else if(greed){
-    condition='Greed Zone';emoji='🤑';
-    reason='Market is greedy — coins already ran. Lower max % to catch anything still coiling. VWAP discipline critical.';
-    setFilters({fc:1,fcx:6,frv:2.5,fvol:0.5,fmin:0.01,fmax:2,fvw:3,fvw_on:true});
-  } else if(bullish){
-    condition='Bullish';emoji='🟢';
-    reason='BTC trending up, order book healthy, sentiment okay. Can be slightly looser — momentum trades work well in this environment.';
-    setFilters({fc:1,fcx:10,frv:2,fvol:0.5,fmin:0.01,fmax:2,fvw:5,fvw_on:true});
-  } else {
-    condition='Neutral';emoji='😐';
-    reason='Mixed signals. Use balanced filters — wait for high-score coins with clear VWAP proximity and volume building.';
-    setFilters({fc:1,fcx:8,frv:2.5,fvol:0.5,fmin:0.01,fmax:2,fvw:4,fvw_on:true});
-  }
-
-  box.innerHTML=`
-    <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:6px">${emoji} Market: ${condition}</div>
-    <div style="margin-bottom:8px">${reason}</div>
-    <div style="font-size:10px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap">
-      <span>F&G: <b style="color:var(--text)">${fng}</b></span>
-      <span>BTC Book: <b style="color:var(--text)">${btcBook}% Buy</b></span>
-      <span>BTC 1h: <b style="color:var(--text)">${btcTrend}</b></span>
-      <span>BTC 24h: <b style="color:var(--text)">${btcChg>0?'+':''}${btcChg.toFixed(2)}%</b></span>
-    </div>
-    <div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--orange)">✓ Filters updated automatically</div>`;
+    const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list')}`;
+    const r=await fetch(proxy);
+    const d=await r.json();
+    const parsed=JSON.parse(d.contents||'{}');
+    const tokens=parsed.data||[];
+    if(!tokens.length){setAP(0,'No Alpha tokens found');return;}
+    setAP(40,`${tokens.length} Alpha tokens found — scoring…`);
+    // Score by 24h change, volume, market cap (favor liquid + moving)
+    const scored=tokens.map(t=>{
+      const chg=parseFloat(t.percentChange24h)||0;
+      const vol=parseFloat(t.volume24h)||0;
+      const mcap=parseFloat(t.marketCap)||0;
+      const liq=parseFloat(t.liquidity)||0;
+      const price=parseFloat(t.price)||0;
+      let score=0;
+      if(chg>=2&&chg<=15)score+=30;else if(chg>15&&chg<=30)score+=15;else if(chg<0)score-=10;
+      if(vol>=50000)score+=25;else if(vol>=10000)score+=15;else if(vol>=2000)score+=5;
+      if(liq>=100000)score+=20;else if(liq>=20000)score+=10;
+      if(mcap>0&&mcap<5e6)score+=15; // small cap = more room
+      if(t.hotTag)score+=10;
+      return{...t,chg,vol,mcap,liq,price,alphaScore:Math.max(0,Math.min(100,score))};
+    }).filter(t=>t.vol>500); // filter dead tokens
+    scored.sort((a,b)=>b.alphaScore-a.alphaScore);
+    alphaTokens=scored.slice(0,20);
+    renderAlpha(alphaTokens);
+    setAP(100,'');
+    setTimeout(()=>{$('alpha-prow').style.display='none';},1500);
+  }catch(e){setAP(0,'Error fetching Alpha data — try again');}
 }
 
-function setFilters(vals){
-  const map={fc:'fc',fcx:'fcx',frv:'frv',fvol:'fvol',fmin:'fmin',fmax:'fmax',fvw:'fvw'};
-  for(const[k,v]of Object.entries(vals)){
-    if(k==='fvw_on'){
-      const cb=$('fvw_on');
-      if(cb){cb.checked=v;const inp=$('fvw');if(inp){inp.disabled=!v;inp.style.opacity=v?'1':'0.3';}}
-    } else {
-      const el=$(k);if(el)el.value=v;
-    }
-  }
+function renderAlpha(tokens){
+  if(!tokens.length){$('alpha-content').innerHTML='<div class="empty"><div class="empty-i">📭</div><div class="empty-t">No active Alpha tokens</div><div class="empty-s">Try again later</div></div>';return;}
+  let h=`<div class="res-hdr"><span class="res-count">🔮 Top ${tokens.length} Alpha tokens</span></div><div class="cards">`;
+  tokens.forEach((t,i)=>{
+    const chgCol=t.chg>=0?'up':'dn';
+    const scoreCol=t.alphaScore>=70?'var(--green)':t.alphaScore>=50?'var(--orange)':'var(--text3)';
+    h+=`<div class="card ${t.alphaScore>=60?'coil':''}" onclick="openAlphaDetail(${i})">
+      <div class="ct">
+        <div class="cn">
+          <span class="csym">${(t.symbol||'').toUpperCase()}</span>
+          ${t.hotTag?'<span class="tag t-hot">🔥 HOT</span>':''}
+          <span class="tag" style="background:var(--purple-l);color:var(--purple)">${t.chainName||'BSC'}</span>
+        </div>
+        <div class="cr">
+          <span class="cchg ${chgCol}">${t.chg>=0?'+':''}${t.chg.toFixed(2)}%</span>
+          <div class="cscore" style="color:${scoreCol}">Score ${t.alphaScore}/100</div>
+        </div>
+      </div>
+      <div class="cst">
+        <div class="cs"><div class="csl">Price</div><div class="csv">$${fP(t.price)}</div></div>
+        <div class="cs"><div class="csl">Vol 24h</div><div class="csv">${fV(t.vol)}</div></div>
+        <div class="cs"><div class="csl">MCap</div><div class="csv">${t.mcap?fV(t.mcap):'—'}</div></div>
+        <div class="cs"><div class="csl">Holders</div><div class="csv">${t.holders||'—'}</div></div>
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:var(--text3)">⚠ Pre-listing / low liquidity — size positions very small ($2-5)</div>
+    </div>`;
+  });
+  $('alpha-content').innerHTML=h+'</div>';
 }
 
-// ═══════════════ VALUE SUGGESTER ═══════════════
-async function suggestValues(){
-  const box=$('suggest-box');
-  box.style.display='block';
-  box.innerHTML='🎯 Reading market conditions…';
-  const fng=parseInt(($('fng').textContent||'50').replace(/[^0-9]/g,''))||50;
-  const btcBook=ST.btcBook?.bp||50;
-  const btcChg=parseFloat(($('btcc').textContent||'0').replace(/[^0-9.\-+]/g,''))||0;
-  let btcTrend='sideways';
-  try{
-    const r=await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=6');
-    const kl=await r.json();
-    if(Array.isArray(kl)&&kl.length>=2){const pct=(+kl[kl.length-1][4]-+kl[0][4])/+kl[0][4]*100;btcTrend=pct>1?'up':pct<-1?'down':'sideways';}
-  }catch(_){}
-  const bullish=fng>=50&&btcBook>=52&&btcTrend==='up';
-  const bearish=fng<=35||btcBook<=43||btcTrend==='down';
-  const extremeFear=fng<=25,greed=fng>=70;
-  let cond,emoji,reason,vals;
-  if(extremeFear){cond='Extreme Fear';emoji='😱';reason='Market panicking. Only trade coins with negative funding or totally disconnected from BTC. Very tight filters.';vals={fc:3,fcx:6,frv:4,fvol:1,fmin:0.01,fmax:1,fvw:2};}
-  else if(bearish){cond='Bearish';emoji='🐻';reason='BTC weak or fear high. Tighten everything — only cleanest setups near VWAP with strong volume.';vals={fc:2,fcx:7,frv:3.5,fvol:1,fmin:0.01,fmax:1.5,fvw:3};}
-  else if(greed){cond='Greed Zone';emoji='🤑';reason='Market greedy — most coins already ran. Lower max % to catch coiling coins. VWAP discipline critical.';vals={fc:1,fcx:6,frv:2.5,fvol:0.5,fmin:0.01,fmax:2,fvw:3};}
-  else if(bullish){cond='Bullish';emoji='🟢';reason='BTC up, book healthy, sentiment good. Slightly looser filters — momentum trades work well here.';vals={fc:1,fcx:10,frv:2,fvol:0.5,fmin:0.01,fmax:2,fvw:5};}
-  else{cond='Neutral';emoji='😐';reason='Mixed signals. Balanced filters — focus on coins with high score, vol building, and close to VWAP.';vals={fc:1,fcx:8,frv:2.5,fvol:0.5,fmin:0.01,fmax:2,fvw:4};}
-  for(const[k,v]of Object.entries(vals)){const el=$(k);if(el)el.value=v;}
-  box.innerHTML=`<div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:5px">${emoji} Market Condition: ${cond}</div><div style="margin-bottom:8px;line-height:1.7">${reason}</div><div style="font-size:10px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap"><span>F&G: <b style="color:var(--text)">${fng}</b></span><span>BTC Book: <b style="color:var(--text)">${btcBook}% Buy</b></span><span>BTC 1h: <b style="color:var(--text)">${btcTrend}</b></span></div><div style="margin-top:7px;font-size:10px;font-weight:700;color:var(--orange)">✓ Filters auto-updated for this market</div>`;
+function openAlphaDetail(idx){
+  const t=alphaTokens[idx];
+  if(!t)return;
+  window.open(`https://www.binance.com/en/alpha/bsc/${t.contractAddress}`,'_blank');
 }
 
 // ═══════════════ AUTO REFRESH CHARTS ═══════════════
