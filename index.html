@@ -601,21 +601,77 @@ function vpCalc(candles,bins=10){
   return{buckets:bkts,maxV:mxV,poc:bkts.reduce((a,b)=>b.vol>a.vol?b:a)};
 }
 
-// ═══════════════ MOMENTUM SCORE ═══════════════
+// ═══════════════ TAKER BUY RATIO — real buying pressure ═══════════════
+// Binance klines include taker buy volume. High ratio = real buyers, not just wash/bot volume
+function takerBuyRatio(klinesRaw){
+  if(!Array.isArray(klinesRaw)||!klinesRaw.length)return null;
+  let buyVol=0,totalVol=0;
+  klinesRaw.slice(-10).forEach(k=>{
+    const vol=+k[5],takerBuyVol=+k[9]; // k[9] = taker buy base asset volume
+    totalVol+=vol;buyVol+=takerBuyVol;
+  });
+  return totalVol>0?+(buyVol/totalVol*100).toFixed(1):null;
+}
+
+// ═══════════════ BTC INDEPENDENCE — is this coin moving on its own? ═══════════════
+function btcIndependence(coinChg,btcChgRecent){
+  // If coin moved way more than BTC's recent move, it has its own catalyst (good)
+  // If coin moved roughly same as BTC, it's just following (less special)
+  if(btcChgRecent===null)return null;
+  const diff=coinChg-btcChgRecent*3; // alt typically beta ~2-3x BTC normally
+  return diff>2?'independent':diff<-2?'lagging':'correlated';
+}
+
+// ═══════════════ EXHAUSTION DETECTOR — momentum slowing down ═══════════════
+function isExhausted(candles){
+  if(candles.length<6)return false;
+  const bodies=candles.slice(-6).map(c=>Math.abs(c.close-c.open));
+  const firstHalf=bodies.slice(0,3).reduce((a,b)=>a+b,0)/3;
+  const secondHalf=bodies.slice(3).reduce((a,b)=>a+b,0)/3;
+  // Bodies shrinking = momentum dying, even if price still slightly up
+  return firstHalf>0&&secondHalf<firstHalf*0.5;
+}
+
+// ═══════════════ STABLECOIN / WRAPPED FILTER ═══════════════
+const STABLE_OR_WRAPPED=['USDC','FDUSD','TUSD','BUSD','DAI','USDP','PAX','EUR','GBP','TRY','BRL','RUB','UAH','ZAR','IDRT','BIDR','VAI','USTC','WBTC','WBETH','BETH'];
+function isStableOrWrapped(sym){return STABLE_OR_WRAPPED.includes(sym);}
+
+// ═══════════════ MULTI-TIMEFRAME CONFIRMATION ═══════════════
+// Checks if 1h trend agrees with 15m signal — reduces false positives
+function htfConfirms(closes1h){
+  if(!closes1h||closes1h.length<10)return null;
+  const m7=maCalc(closes1h,7),L=m7.length-1;
+  const recent=closes1h.slice(-3),avg=recent.reduce((a,b)=>a+b,0)/3;
+  return m7[L]!==null?avg>m7[L]:null; // true = 1h price above its own MA7, healthy
+}
+
+// ═══════════════ MOMENTUM SCORE (v2 — more factors) ═══════════════
 function mScore(coin){
   let s=0;
   const rv=coin.rv||0;
-  if(rv>=6)s+=40;else if(rv>=4)s+=30;else if(rv>=2.5)s+=20;else if(rv>=1.5)s+=10;
-  if(coin.chg>=.5&&coin.chg<=4)s+=25;
-  else if(coin.chg>4&&coin.chg<=7)s+=15;
-  else if(coin.chg>7&&coin.chg<=10)s+=5;
+  if(rv>=6)s+=35;else if(rv>=4)s+=27;else if(rv>=2.5)s+=18;else if(rv>=1.5)s+=8;
+  if(coin.chg>=.5&&coin.chg<=4)s+=20;
+  else if(coin.chg>4&&coin.chg<=7)s+=12;
+  else if(coin.chg>7&&coin.chg<=10)s+=4;
   else if(coin.chg<0)s-=10;
   if(coin.vwapDist!=null){
     const d=coin.vwapDist;
-    if(d>=0&&d<=2)s+=20;else if(d>2&&d<=5)s+=12;else if(d>5&&d<=8)s+=4;else if(d>8)s-=8;else if(d>=-2&&d<0)s+=10;else if(d<-2)s-=5;
+    if(d>=0&&d<=2)s+=16;else if(d>2&&d<=5)s+=10;else if(d>5&&d<=8)s+=3;else if(d>8)s-=8;else if(d>=-2&&d<0)s+=8;else if(d<-2)s-=5;
   }
-  if(coin.qv>=3e6)s+=10;else if(coin.qv>=1e6)s+=6;else if(coin.qv>=5e5)s+=3;
-  if(coin.squeeze)s+=5;if(coin.volBld)s+=5;if(coin.hLows)s+=5;
+  if(coin.qv>=3e6)s+=8;else if(coin.qv>=1e6)s+=5;else if(coin.qv>=5e5)s+=2;
+  if(coin.squeeze)s+=4;if(coin.volBld)s+=4;if(coin.hLows)s+=4;
+  // NEW: Taker buy ratio — real buying pressure, not just volume
+  if(coin.takerRatio!=null){
+    if(coin.takerRatio>=58)s+=12;else if(coin.takerRatio>=52)s+=6;else if(coin.takerRatio<45)s-=8;
+  }
+  // NEW: BTC independence — coin moving on its own catalyst is stronger signal
+  if(coin.btcIndep==='independent')s+=8;
+  else if(coin.btcIndep==='lagging')s-=4;
+  // NEW: Exhaustion penalty — candles shrinking = momentum dying even if green
+  if(coin.exhausted)s-=15;
+  // NEW: 1h confirmation — higher timeframe agrees
+  if(coin.htfOk===true)s+=8;
+  else if(coin.htfOk===false)s-=6;
   return Math.max(0,Math.min(s,100));
 }
 
@@ -893,11 +949,14 @@ function whyThisCoin(coin){
   const reasons=[];
   if(coin.rv>=6)reasons.push(`${coin.rv.toFixed(1)}x normal volume`);
   else if(coin.rv>=3)reasons.push(`volume building (${coin.rv.toFixed(1)}x)`);
+  if(coin.takerRatio!=null&&coin.takerRatio>=58)reasons.push(`${coin.takerRatio}% real buy pressure`);
+  if(coin.btcIndep==='independent')reasons.push('moving independently of BTC');
   if(coin.hLows)reasons.push('higher lows forming');
   if(coin.volBld)reasons.push('volume accelerating');
   if(coin.squeeze)reasons.push('BB squeeze (coiling)');
+  if(coin.htfOk===true)reasons.push('1h trend confirms');
   if(coin.vwapDist!=null&&Math.abs(coin.vwapDist)<=2)reasons.push('right at VWAP');
-  if(coin.chg>=0.5&&coin.chg<=4)reasons.push('still early — hasn\'t run yet');
+  if(coin.chg>=0.5&&coin.chg<=4)reasons.push("still early — hasn't run yet");
   if(coin.patternSignal==='bull')reasons.push('bullish candle pattern');
   if(!reasons.length)reasons.push('decent overall setup');
   return reasons.slice(0,3).join(' · ');
@@ -918,6 +977,8 @@ async function runScan(){
     const all=await res.json();
     const cands=all.filter(t=>{
       if(!t.symbol.endsWith('USDT')||/UP|DOWN|BEAR|BULL/.test(t.symbol))return false;
+      const sym=t.symbol.replace('USDT','');
+      if(isStableOrWrapped(sym))return false;
       const p=+t.lastPrice,c=+t.priceChangePercent,v=+t.quoteVolume;
       if(p<0.01||p>5)return false;
       if(c<0.3||c>mkt.maxC+3)return false; // soft pre-filter, allow a little buffer before score
@@ -927,14 +988,21 @@ async function runScan(){
     cands.sort((a,b)=>+b.quoteVolume-+a.quoteVolume);
     const top=cands.slice(0,45);
     setProg(15,`${cands.length} candidates — analyzing each…`);
+    // BTC's own recent 15m change, for independence check
+    let btcRecent15=null;
+    try{
+      const bkl=await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=4').then(r=>r.json());
+      if(Array.isArray(bkl)&&bkl.length>=2)btcRecent15=(+bkl[bkl.length-1][4]-+bkl[0][4])/+bkl[0][4]*100;
+    }catch(_){}
     const out=[];
     for(let i=0;i<top.length;i++){
       const t=top[i];
       setProg(15+Math.round((i+1)/top.length*75),`${t.symbol.replace('USDT','')} (${i+1}/${top.length})`);
       try{
-        const[dkl,kl15]=await Promise.all([
+        const[dkl,kl15,kl1h]=await Promise.all([
           fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=1d&limit=31`).then(r=>r.json()),
           fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=15m&limit=60`).then(r=>r.json()),
+          fetch(`https://api.binance.com/api/v3/klines?symbol=${t.symbol}&interval=1h&limit=15`).then(r=>r.json()),
         ]);
         if(!Array.isArray(dkl)||dkl.length<10)continue;
         const hist=dkl.slice(0,-1);
@@ -949,7 +1017,13 @@ async function runScan(){
         const pats=c15.length>=10?detectPats(c15.slice(-10)):[];
         const bullPats=pats.filter(p=>p.s==='bull').length,bearPats=pats.filter(p=>p.s==='bear').length;
         const patternSignal=bullPats>bearPats?'bull':bearPats>bullPats?'bear':'neutral';
-        const coin={sym:t.symbol.replace('USDT',''),pair:t.symbol,price:+t.lastPrice,chg:+t.priceChangePercent,qv:+t.quoteVolume,rv,hi:+t.highPrice,lo:+t.lowPrice,vwapVal,vwapDist,squeeze,volBld,hLows,mcap:null,patternSignal,patternCount:pats.length};
+        // NEW factors
+        const takerRatio=takerBuyRatio(kl15);
+        const btcIndep=btcIndependence(+t.priceChangePercent,btcRecent15);
+        const exhausted=isExhausted(c15);
+        const closes1h=Array.isArray(kl1h)?kl1h.map(k=>+k[4]):null;
+        const htfOk=htfConfirms(closes1h);
+        const coin={sym:t.symbol.replace('USDT',''),pair:t.symbol,price:+t.lastPrice,chg:+t.priceChangePercent,qv:+t.quoteVolume,rv,hi:+t.highPrice,lo:+t.lowPrice,vwapVal,vwapDist,squeeze,volBld,hLows,mcap:null,patternSignal,patternCount:pats.length,takerRatio,btcIndep,exhausted,htfOk};
         coin.momentum=mScore(coin);
         if(patternSignal==='bull')coin.momentum=Math.min(100,coin.momentum+8);
         if(patternSignal==='bear')coin.momentum=Math.max(0,coin.momentum-12);
@@ -982,7 +1056,7 @@ function renderResults(coins,sk){
     const sector=getSector(c.sym);
     const scoreCol=c.momentum>=70?'var(--green)':c.momentum>=50?'var(--orange)':'var(--text3)';
     const vd=c.vwapDist!=null?c.vwapDist:null,vdStr=vd!=null?`${vd>=0?'+':''}${vd.toFixed(1)}%`:'—',vdCol=vd!=null?(vd>5?'var(--orange)':vd>=0?'var(--green)':'var(--blue)'):'var(--text3)';
-    const warns=[];if(c.chg>10)warns.push('Already +'+c.chg.toFixed(0)+'%');if(vd!=null&&vd>8)warns.push('Far above VWAP');if(c.patternSignal==='bear')warns.push('bearish pattern detected');
+    const warns=[];if(c.chg>10)warns.push('Already +'+c.chg.toFixed(0)+'%');if(vd!=null&&vd>8)warns.push('Far above VWAP');if(c.patternSignal==='bear')warns.push('bearish pattern detected');if(c.exhausted)warns.push('momentum slowing');if(c.btcIndep==='lagging')warns.push('just following BTC');if(c.takerRatio!=null&&c.takerRatio<45)warns.push('weak buy pressure');
     let cardCls='card';if(isCoil)cardCls+=' coil';else if(hot||early)cardCls+=' bull';if(warns.length)cardCls+=' danger';
     const why=whyThisCoin(c);
     h+=`<div class="${cardCls}" onclick="openDetail(${idx})">
