@@ -1405,8 +1405,31 @@ RISK: [1 sentence]`;
   $('aibtn').disabled=false;$('aibtn').textContent='🤖 GET ENTRY · TP · SL';
 }
 
-// ═══════════════ BINANCE ALPHA ═══════════════
+// ═══════════════ BINANCE ALPHA — proper ranking system ═══════════════
 let alphaTokens=[];
+
+// Liquidity-to-MCap ratio: healthy alpha tokens have real liquidity backing their cap
+function liqHealthRatio(liq,mcap){
+  if(!mcap||mcap<=0)return null;
+  return liq/mcap;
+}
+
+// Volume-to-MCap ratio: how much is trading relative to size — high = real interest
+function volMcapRatio(vol,mcap){
+  if(!mcap||mcap<=0)return null;
+  return vol/mcap;
+}
+
+// Age-aware scoring: very fresh tokens (first hours) are riskiest but biggest upside
+function tokenAgeScore(listedAt){
+  if(!listedAt)return{label:'Unknown age',bonus:0};
+  const ageHrs=(Date.now()-listedAt)/3600000;
+  if(ageHrs<2)return{label:'🆕 Brand new (<2h)',bonus:8};
+  if(ageHrs<24)return{label:'🌱 Fresh (<24h)',bonus:5};
+  if(ageHrs<72)return{label:'📅 Recent (<3d)',bonus:2};
+  return{label:'⏳ Established',bonus:0};
+}
+
 async function scanAlpha(){
   $('alpha-prow').style.display='flex';
   const setAP=(p,t)=>{$('alpha-pbar').style.width=p+'%';$('alpha-ptxt').textContent=t;};
@@ -1418,22 +1441,71 @@ async function scanAlpha(){
     const parsed=JSON.parse(d.contents||'{}');
     const tokens=parsed.data||[];
     if(!tokens.length){setAP(0,'No Alpha tokens found');return;}
-    setAP(40,`${tokens.length} Alpha tokens found — scoring…`);
-    // Score by 24h change, volume, market cap (favor liquid + moving)
+    setAP(40,`${tokens.length} Alpha tokens found — deep scoring…`);
+
     const scored=tokens.map(t=>{
       const chg=parseFloat(t.percentChange24h)||0;
+      const chg1h=parseFloat(t.percentChange1h)||0;
       const vol=parseFloat(t.volume24h)||0;
       const mcap=parseFloat(t.marketCap)||0;
       const liq=parseFloat(t.liquidity)||0;
       const price=parseFloat(t.price)||0;
+      const holders=parseInt(t.holders)||0;
+      const listedAt=t.listingTime?+t.listingTime:null;
+
       let score=0;
-      if(chg>=2&&chg<=15)score+=30;else if(chg>15&&chg<=30)score+=15;else if(chg<0)score-=10;
-      if(vol>=50000)score+=25;else if(vol>=10000)score+=15;else if(vol>=2000)score+=5;
-      if(liq>=100000)score+=20;else if(liq>=20000)score+=10;
-      if(mcap>0&&mcap<5e6)score+=15; // small cap = more room
-      if(t.hotTag)score+=10;
-      return{...t,chg,vol,mcap,liq,price,alphaScore:Math.max(0,Math.min(100,score))};
-    }).filter(t=>t.vol>500); // filter dead tokens
+      const reasons=[];
+
+      // 1. Price action sweet spot — same logic as main scanner: not yet extended
+      if(chg>=2&&chg<=15){score+=22;reasons.push(`+${chg.toFixed(1)}% — healthy early move`);}
+      else if(chg>15&&chg<=40){score+=10;reasons.push('already running, riskier entry');}
+      else if(chg>40){score-=10;reasons.push('extended — likely too late');}
+      else if(chg<0){score-=8;reasons.push('red — no momentum yet');}
+
+      // 2. 1h momentum — is it accelerating right now?
+      if(chg1h>=1&&chg1h<=8){score+=12;reasons.push('accelerating in last hour');}
+      else if(chg1h<-2){score-=8;reasons.push('reversing in last hour');}
+
+      // 3. Liquidity health — can you actually exit your position?
+      const liqRatio=liqHealthRatio(liq,mcap);
+      if(liq>=150000){score+=18;reasons.push('strong liquidity — safe to exit');}
+      else if(liq>=50000){score+=10;}
+      else if(liq>=15000){score+=3;}
+      else{score-=15;reasons.push('⚠ thin liquidity — high slippage risk');}
+
+      // 4. Volume-to-MCap — real trading interest vs dead chart
+      const vmRatio=volMcapRatio(vol,mcap);
+      if(vmRatio!=null){
+        if(vmRatio>=0.3){score+=15;reasons.push('high turnover — active interest');}
+        else if(vmRatio>=0.1){score+=8;}
+        else if(vmRatio<0.02){score-=10;reasons.push('low turnover — illiquid chart');}
+      }
+
+      // 5. Market cap sweet spot — room to grow but not a total scam-cap
+      if(mcap>0){
+        if(mcap>=200000&&mcap<3e6){score+=15;reasons.push('small cap — real upside room');}
+        else if(mcap>=3e6&&mcap<15e6){score+=8;}
+        else if(mcap<200000){score-=12;reasons.push('⚠ micro-cap — extreme risk');}
+        else if(mcap>50e6){score-=5;reasons.push('already large for Alpha stage');}
+      }
+
+      // 6. Holder count — distribution health (avoid 1-whale tokens)
+      if(holders>=500){score+=10;reasons.push(`${holders}+ holders — decent distribution`);}
+      else if(holders>=100){score+=5;}
+      else if(holders>0&&holders<50){score-=10;reasons.push('⚠ very few holders — whale risk');}
+
+      // 7. Hot tag from Binance itself
+      if(t.hotTag){score+=8;reasons.push('Binance flagged as hot');}
+
+      // 8. Age bonus — fresher = more alpha but more risk, balanced bonus
+      const age=tokenAgeScore(listedAt);
+      score+=age.bonus;
+      if(age.bonus>0)reasons.push(age.label);
+
+      return{...t,chg,chg1h,vol,mcap,liq,price,holders,liqRatio,vmRatio,ageInfo:age,
+        alphaScore:Math.max(0,Math.min(100,score)),reasons:reasons.slice(0,3)};
+    }).filter(t=>t.vol>500&&t.liq>5000); // filter dead/scam-thin tokens entirely
+
     scored.sort((a,b)=>b.alphaScore-a.alphaScore);
     alphaTokens=scored.slice(0,20);
     renderAlpha(alphaTokens);
@@ -1443,14 +1515,16 @@ async function scanAlpha(){
 }
 
 function renderAlpha(tokens){
-  if(!tokens.length){$('alpha-content').innerHTML='<div class="empty"><div class="empty-i">📭</div><div class="empty-t">No active Alpha tokens</div><div class="empty-s">Try again later</div></div>';return;}
-  let h=`<div class="res-hdr"><span class="res-count">🔮 Top ${tokens.length} Alpha tokens</span></div><div class="cards">`;
+  if(!tokens.length){$('alpha-content').innerHTML='<div class="empty"><div class="empty-i">📭</div><div class="empty-t">No quality Alpha setups right now</div><div class="empty-s">Filtered out thin/dead tokens<br>Try again in a few minutes</div></div>';return;}
+  let h=`<div class="res-hdr"><span class="res-count">🔮 Top ${tokens.length} Alpha — ranked best to worst</span></div><div class="cards">`;
   tokens.forEach((t,i)=>{
     const chgCol=t.chg>=0?'up':'dn';
-    const scoreCol=t.alphaScore>=70?'var(--green)':t.alphaScore>=50?'var(--orange)':'var(--text3)';
-    h+=`<div class="card ${t.alphaScore>=60?'coil':''}" onclick="openAlphaDetail(${i})">
+    const scoreCol=t.alphaScore>=65?'var(--green)':t.alphaScore>=45?'var(--orange)':'var(--text3)';
+    const why=t.reasons&&t.reasons.length?t.reasons.join(' · '):'Standard setup';
+    h+=`<div class="card ${t.alphaScore>=65?'coil':t.alphaScore<35?'danger':''}" onclick="openAlphaDetail(${i})">
       <div class="ct">
         <div class="cn">
+          ${i===0?'<span style="font-size:13px">🥇</span>':i===1?'<span style="font-size:13px">🥈</span>':i===2?'<span style="font-size:13px">🥉</span>':''}
           <span class="csym">${(t.symbol||'').toUpperCase()}</span>
           ${t.hotTag?'<span class="tag t-hot">🔥 HOT</span>':''}
           <span class="tag" style="background:var(--purple-l);color:var(--purple)">${t.chainName||'BSC'}</span>
@@ -1460,11 +1534,12 @@ function renderAlpha(tokens){
           <div class="cscore" style="color:${scoreCol}">Score ${t.alphaScore}/100</div>
         </div>
       </div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:8px;line-height:1.5">💡 ${why}</div>
       <div class="cst">
         <div class="cs"><div class="csl">Price</div><div class="csv">$${fP(t.price)}</div></div>
         <div class="cs"><div class="csl">Vol 24h</div><div class="csv">${fV(t.vol)}</div></div>
+        <div class="cs"><div class="csl">Liquidity</div><div class="csv">${fV(t.liq)}</div></div>
         <div class="cs"><div class="csl">MCap</div><div class="csv">${t.mcap?fV(t.mcap):'—'}</div></div>
-        <div class="cs"><div class="csl">Holders</div><div class="csv">${t.holders||'—'}</div></div>
       </div>
       <div style="margin-top:8px;font-size:9px;color:var(--text3)">⚠ Pre-listing / low liquidity — size positions very small ($2-5)</div>
     </div>`;
